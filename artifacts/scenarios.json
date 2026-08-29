@@ -1,0 +1,2849 @@
+[
+  {
+    "id": 1,
+    "title": "Normal traffic baseline",
+    "question": "Run the detector on benign traffic only. How much noise does it make?",
+    "stats": {
+      "benign_connections": 9711,
+      "false_positives": 413,
+      "false_positive_rate": 0.0425,
+      "by_layer": {
+        "signature": 235,
+        "supervised": 287,
+        "anomaly": 152
+      },
+      "by_severity": {
+        "critical": 173,
+        "high": 8,
+        "low": 118,
+        "medium": 114
+      }
+    },
+    "rules_involved": {
+      "R06": 113,
+      "R04": 52,
+      "R10": 43,
+      "R11": 19,
+      "R07": 13,
+      "R09": 3,
+      "R03": 2,
+      "R12": 1
+    },
+    "examples": [
+      {
+        "row": 476,
+        "severity": "critical",
+        "confidence": 0.9936,
+        "category": "probe",
+        "layers": [
+          "signature",
+          "supervised",
+          "anomaly"
+        ],
+        "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+        "identity": {
+          "protocol_type": "tcp",
+          "service": "private",
+          "flag": "rstr",
+          "duration": 3,
+          "src_bytes": 0,
+          "dst_bytes": 0,
+          "count": 143,
+          "srv_count": 2
+        },
+        "rules": [
+          {
+            "rule_id": "R06",
+            "rule": "Vertical port scan",
+            "category": "probe",
+            "severity": "high",
+            "why": "One host touched across many different services (diff_srv_rate >= 0.55) with a long connection history but few repeats of any single service is port enumeration, not normal client behaviour.",
+            "targets": "portsweep, satan, mscan",
+            "observed": {
+              "diff_srv_rate": "0.550",
+              "dst_host_count": "150",
+              "dst_host_diff_srv_rate": "0.520",
+              "dst_host_same_srv_rate": "0.010",
+              "dst_host_srv_count": "2"
+            }
+          },
+          {
+            "rule_id": "R07",
+            "rule": "Rejected-connection scan",
+            "category": "probe",
+            "severity": "medium",
+            "why": "Closed ports answer with RST. A source whose connections are rejected at least 60% of the time is enumerating rather than using services.",
+            "targets": "satan, mscan, portsweep",
+            "observed": {
+              "flag": "rstr",
+              "rerror_rate": "1",
+              "srv_rerror_rate": "1",
+              "count": "143",
+              "dst_host_rerror_rate": "0.950"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "probe",
+          "probability": 0.983,
+          "attack_probability": 1.0,
+          "class_probabilities": {
+            "dos": 0.017,
+            "normal": 0.0,
+            "probe": 0.983,
+            "r2l": 0.0,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "contribution": 0.11549590483237857,
+              "observed": 0.52,
+              "direction": "raises",
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "diff_srv_rate",
+              "group": "service_spread",
+              "contribution": 0.07621421140506134,
+              "observed": 0.55,
+              "direction": "raises",
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "service_entropy_proxy",
+              "group": "service_spread",
+              "contribution": 0.07100763432679504,
+              "observed": 0.28600000000000003,
+              "direction": "raises",
+              "meaning": "diff_srv_rate * dst_host_diff_srv_rate. High only when a source sprays many services both in the 2-second window and across the host's history, which is horizontal scanning rather than a busy server."
+            },
+            {
+              "feature": "bytes_per_second",
+              "group": "volume",
+              "contribution": 0.07009122306173138,
+              "observed": 0.0,
+              "direction": "raises",
+              "meaning": "(src_bytes + dst_bytes) / (duration + 1). Separates a long slow session from a burst of the same volume."
+            },
+            {
+              "feature": "logged_in",
+              "group": "authentication",
+              "contribution": 0.04478656761360421,
+              "observed": 0.0,
+              "direction": "raises",
+              "meaning": "Failed logins, guest logins and shell/root activity are the only content-level evidence of brute force and privilege escalation."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.6584,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9995,
+          "alerted": true,
+          "features": [
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.08527477873984095,
+              "observed": 2.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -2.033154720587289,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "dst_host_srv_rerror_rate",
+              "group": "error_behaviour",
+              "weight": 0.06801353920302323,
+              "observed": 1.0,
+              "benign_mean": 0.04469833538749486,
+              "benign_sd": 0.1921865894752588,
+              "z": 4.9706988776939935,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_same_srv_rate",
+              "group": "service_spread",
+              "weight": 0.048803185473599985,
+              "observed": 0.01,
+              "benign_mean": 0.8118750278425438,
+              "benign_sd": 0.32408873501429547,
+              "z": -2.4742452952188336,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "dst_host_same_src_port_rate",
+              "group": "service_spread",
+              "weight": 0.04821133671919871,
+              "observed": 0.95,
+              "benign_mean": 0.12172579184181276,
+              "benign_sd": 0.25437988393425265,
+              "z": 3.2560523078635573,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "weight": 0.04790092265094346,
+              "observed": 0.52,
+              "benign_mean": 0.04013394116686694,
+              "benign_sd": 0.12852846716526856,
+              "z": 3.733539109402872,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "normal",
+          "category": "normal",
+          "is_attack": "0"
+        },
+        "narrative": "(private, state rstr) flagged CRITICAL as probe with confidence 0.99. Rule R06 (Vertical port scan) matched: One host touched across many different services (diff_srv_rate >= 0.55) with a long connection history but few repeats of any single service is port enumeration, not normal client behaviour. Observed: diff_srv_rate=0.550, dst_host_count=150, dst_host_diff_srv_rate=0.520, dst_host_same_srv_rate=0.010, dst_host_srv_count=2. A further 1 rule(s) also matched. The supervised model assigns 98.3% to 'probe'. Largest contributions: dst_host_diff_srv_rate=0.52 (raises probe by 0.115); diff_srv_rate=0.55 (raises probe by 0.076); service_entropy_proxy=0.286 (raises probe by 0.071). The anomaly layer scores this more unusual than 100.0% of benign training traffic. Most isolating features: dst_host_srv_count=2 (-2.0 SD from the benign mean); dst_host_srv_rerror_rate=1 (+5.0 SD from the benign mean); dst_host_same_srv_rate=0.01 (-2.5 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+      },
+      {
+        "row": 15265,
+        "severity": "critical",
+        "confidence": 0.993,
+        "category": "probe",
+        "layers": [
+          "signature",
+          "supervised",
+          "anomaly"
+        ],
+        "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+        "identity": {
+          "protocol_type": "udp",
+          "service": "private",
+          "flag": "sf",
+          "duration": 0,
+          "src_bytes": 1,
+          "dst_bytes": 0,
+          "count": 473,
+          "srv_count": 30
+        },
+        "rules": [
+          {
+            "rule_id": "R06",
+            "rule": "Vertical port scan",
+            "category": "probe",
+            "severity": "high",
+            "why": "One host touched across many different services (diff_srv_rate >= 0.55) with a long connection history but few repeats of any single service is port enumeration, not normal client behaviour.",
+            "targets": "portsweep, satan, mscan",
+            "observed": {
+              "diff_srv_rate": "0.940",
+              "dst_host_count": "255",
+              "dst_host_diff_srv_rate": "0.890",
+              "dst_host_same_srv_rate": "0.120",
+              "dst_host_srv_count": "30"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "probe",
+          "probability": 0.9589,
+          "attack_probability": 1.0,
+          "class_probabilities": {
+            "dos": 0.041,
+            "normal": 0.0,
+            "probe": 0.9589,
+            "r2l": 0.0,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "bytes_per_second",
+              "group": "volume",
+              "contribution": 0.11511110538746026,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "(src_bytes + dst_bytes) / (duration + 1). Separates a long slow session from a burst of the same volume."
+            },
+            {
+              "feature": "src_bytes",
+              "group": "volume",
+              "contribution": 0.08482315042202059,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "Byte and packet volumes separate bulk transfers and amplification floods from interactive sessions."
+            },
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "contribution": 0.08300843180689149,
+              "observed": 0.89,
+              "direction": "raises",
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "log_src_bytes",
+              "group": "volume",
+              "contribution": 0.07376667931105327,
+              "observed": 0.6931471805599453,
+              "direction": "raises",
+              "meaning": "log1p(src_bytes) -- byte counts span six orders of magnitude; the log makes the scale learnable."
+            },
+            {
+              "feature": "service_entropy_proxy",
+              "group": "service_spread",
+              "contribution": 0.06248317981521491,
+              "observed": 0.8366,
+              "direction": "raises",
+              "meaning": "diff_srv_rate * dst_host_diff_srv_rate. High only when a source sprays many services both in the 2-second window and across the host's history, which is horizontal scanning rather than a busy server."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.6368,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9989,
+          "alerted": true,
+          "features": [
+            {
+              "feature": "conn_per_second",
+              "group": "connection_rate",
+              "weight": 0.08316966287910822,
+              "observed": 473.0,
+              "benign_mean": 22.311435386259426,
+              "benign_sd": 53.89339340717375,
+              "z": 8.362593930738631,
+              "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+            },
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.08125590377155724,
+              "observed": 30.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -1.73080401765752,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "weight": 0.06818551210955222,
+              "observed": 0.89,
+              "benign_mean": 0.04013394116686694,
+              "benign_sd": 0.12852846716526856,
+              "z": 6.6122788015539875,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "diff_srv_rate",
+              "group": "service_spread",
+              "weight": 0.060179717500513506,
+              "observed": 0.94,
+              "benign_mean": 0.02878784728925027,
+              "benign_sd": 0.14562100029987263,
+              "z": 6.257422698884913,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "service_entropy_proxy",
+              "group": "service_spread",
+              "weight": 0.056488404687377376,
+              "observed": 0.8366,
+              "benign_mean": 0.005223608986828575,
+              "benign_sd": 0.04427808014335157,
+              "z": 18.77625200373562,
+              "meaning": "diff_srv_rate * dst_host_diff_srv_rate. High only when a source sprays many services both in the 2-second window and across the host's history, which is horizontal scanning rather than a busy server."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "normal",
+          "category": "normal",
+          "is_attack": "0"
+        },
+        "narrative": "(private, state sf) flagged CRITICAL as probe with confidence 0.99. Rule R06 (Vertical port scan) matched: One host touched across many different services (diff_srv_rate >= 0.55) with a long connection history but few repeats of any single service is port enumeration, not normal client behaviour. Observed: diff_srv_rate=0.940, dst_host_count=255, dst_host_diff_srv_rate=0.890, dst_host_same_srv_rate=0.120, dst_host_srv_count=30. The supervised model assigns 95.9% to 'probe'. Largest contributions: bytes_per_second=1 (raises probe by 0.115); src_bytes=1 (raises probe by 0.085); dst_host_diff_srv_rate=0.89 (raises probe by 0.083). The anomaly layer scores this more unusual than 99.9% of benign training traffic. Most isolating features: conn_per_second=473 (+8.4 SD from the benign mean); dst_host_srv_count=30 (-1.7 SD from the benign mean); dst_host_diff_srv_rate=0.89 (+6.6 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+      },
+      {
+        "row": 14182,
+        "severity": "critical",
+        "confidence": 0.993,
+        "category": "probe",
+        "layers": [
+          "signature",
+          "supervised",
+          "anomaly"
+        ],
+        "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+        "identity": {
+          "protocol_type": "udp",
+          "service": "private",
+          "flag": "sf",
+          "duration": 0,
+          "src_bytes": 1,
+          "dst_bytes": 0,
+          "count": 510,
+          "srv_count": 9
+        },
+        "rules": [
+          {
+            "rule_id": "R06",
+            "rule": "Vertical port scan",
+            "category": "probe",
+            "severity": "high",
+            "why": "One host touched across many different services (diff_srv_rate >= 0.55) with a long connection history but few repeats of any single service is port enumeration, not normal client behaviour.",
+            "targets": "portsweep, satan, mscan",
+            "observed": {
+              "diff_srv_rate": "0.980",
+              "dst_host_count": "255",
+              "dst_host_diff_srv_rate": "0.970",
+              "dst_host_same_srv_rate": "0.040",
+              "dst_host_srv_count": "9"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "probe",
+          "probability": 0.9725,
+          "attack_probability": 0.9969,
+          "class_probabilities": {
+            "dos": 0.0244,
+            "normal": 0.0031,
+            "probe": 0.9725,
+            "r2l": 0.0,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "bytes_per_second",
+              "group": "volume",
+              "contribution": 0.11511110538746026,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "(src_bytes + dst_bytes) / (duration + 1). Separates a long slow session from a burst of the same volume."
+            },
+            {
+              "feature": "src_bytes",
+              "group": "volume",
+              "contribution": 0.08468636030459759,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "Byte and packet volumes separate bulk transfers and amplification floods from interactive sessions."
+            },
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "contribution": 0.08315917832605967,
+              "observed": 0.97,
+              "direction": "raises",
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "log_src_bytes",
+              "group": "volume",
+              "contribution": 0.07356182256266251,
+              "observed": 0.6931471805599453,
+              "direction": "raises",
+              "meaning": "log1p(src_bytes) -- byte counts span six orders of magnitude; the log makes the scale learnable."
+            },
+            {
+              "feature": "service_entropy_proxy",
+              "group": "service_spread",
+              "contribution": 0.06260589014580063,
+              "observed": 0.9506,
+              "direction": "raises",
+              "meaning": "diff_srv_rate * dst_host_diff_srv_rate. High only when a source sprays many services both in the 2-second window and across the host's history, which is horizontal scanning rather than a busy server."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.6413,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9991,
+          "alerted": true,
+          "features": [
+            {
+              "feature": "conn_per_second",
+              "group": "connection_rate",
+              "weight": 0.07937592498555318,
+              "observed": 510.0,
+              "benign_mean": 22.311435386259426,
+              "benign_sd": 53.89339340717375,
+              "z": 9.04913448164547,
+              "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+            },
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.07598942668355449,
+              "observed": 9.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -1.9575670448548468,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "weight": 0.07405642204346756,
+              "observed": 0.97,
+              "benign_mean": 0.04013394116686694,
+              "benign_sd": 0.12852846716526856,
+              "z": 7.234709005262337,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "diff_srv_rate",
+              "group": "service_spread",
+              "weight": 0.062365938412518265,
+              "observed": 0.98,
+              "benign_mean": 0.02878784728925027,
+              "benign_sd": 0.14562100029987263,
+              "z": 6.532108354920988,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "service_entropy_proxy",
+              "group": "service_spread",
+              "weight": 0.0574767382548489,
+              "observed": 0.9506,
+              "benign_mean": 0.005223608986828575,
+              "benign_sd": 0.04427808014335157,
+              "z": 21.350889378050898,
+              "meaning": "diff_srv_rate * dst_host_diff_srv_rate. High only when a source sprays many services both in the 2-second window and across the host's history, which is horizontal scanning rather than a busy server."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "normal",
+          "category": "normal",
+          "is_attack": "0"
+        },
+        "narrative": "(private, state sf) flagged CRITICAL as probe with confidence 0.99. Rule R06 (Vertical port scan) matched: One host touched across many different services (diff_srv_rate >= 0.55) with a long connection history but few repeats of any single service is port enumeration, not normal client behaviour. Observed: diff_srv_rate=0.980, dst_host_count=255, dst_host_diff_srv_rate=0.970, dst_host_same_srv_rate=0.040, dst_host_srv_count=9. The supervised model assigns 97.2% to 'probe'. Largest contributions: bytes_per_second=1 (raises probe by 0.115); src_bytes=1 (raises probe by 0.085); dst_host_diff_srv_rate=0.97 (raises probe by 0.083). The anomaly layer scores this more unusual than 99.9% of benign training traffic. Most isolating features: conn_per_second=510 (+9.0 SD from the benign mean); dst_host_srv_count=9 (-2.0 SD from the benign mean); dst_host_diff_srv_rate=0.97 (+7.2 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+      }
+    ],
+    "finding": "The system does not stay silent, and the brief's own wording anticipates this: 413 of 9,711 benign connections raise something, a false-positive rate of 4.25% -- about 1 in 24. The layers contribute 235 rule hits, 287 supervised alerts and 152 anomaly alerts (overlapping, so these sum to more than the total). The rules doing it are R06 (vertical port scan, 113), R04 (malformed ip fragmentation, 52), R10 (guest session with file activity, 43), R11 (root shell obtained, 19), and the benign populations that trigger them are exactly the ones a real network has: a monitoring system polling many hosts, a client retrying closed ports, an anonymous FTP download, an administrator using su. No threshold on these features separates them, because at connection level they are not different -- the intent is, and intent is not in the record. What the hybrid can do is rank: 232 of these land at medium or low because no second layer corroborates them, so they sort below the corroborated attacks rather than competing with them. 173 still reach critical, which is the residual cost and is stated as such."
+  },
+  {
+    "id": 2,
+    "title": "Reconnaissance and port-scan detection",
+    "question": "Can the system distinguish enumeration from ordinary client traffic?",
+    "stats": {
+      "connections": 2421,
+      "attacks": 2421,
+      "alerts": 2382,
+      "recall": 0.9839,
+      "precision": 1.0,
+      "false_positive_rate": 0.0,
+      "per_family": {
+        "ipsweep": 1.0,
+        "mscan": 0.9649,
+        "nmap": 1.0,
+        "portsweep": 1.0,
+        "saint": 0.9875,
+        "satan": 1.0
+      }
+    },
+    "rules_involved": {
+      "R06": 1493,
+      "R07": 1023,
+      "R01": 69,
+      "R08": 47
+    },
+    "examples": [
+      {
+        "row": 17893,
+        "severity": "critical",
+        "confidence": 0.998,
+        "category": "dos",
+        "layers": [
+          "signature",
+          "supervised",
+          "anomaly"
+        ],
+        "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+        "identity": {
+          "protocol_type": "tcp",
+          "service": "other",
+          "flag": "s0",
+          "duration": 0,
+          "src_bytes": 0,
+          "dst_bytes": 0,
+          "count": 488,
+          "srv_count": 1
+        },
+        "rules": [
+          {
+            "rule_id": "R01",
+            "rule": "TCP SYN flood",
+            "category": "dos",
+            "severity": "critical",
+            "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+            "targets": "neptune, processtable",
+            "observed": {
+              "flag": "s0",
+              "serror_rate": "0.060",
+              "srv_serror_rate": "1",
+              "count": "488",
+              "dst_host_serror_rate": "0.080"
+            }
+          },
+          {
+            "rule_id": "R06",
+            "rule": "Vertical port scan",
+            "category": "probe",
+            "severity": "high",
+            "why": "One host touched across many different services (diff_srv_rate >= 0.55) with a long connection history but few repeats of any single service is port enumeration, not normal client behaviour.",
+            "targets": "portsweep, satan, mscan",
+            "observed": {
+              "diff_srv_rate": "1",
+              "dst_host_count": "255",
+              "dst_host_diff_srv_rate": "1",
+              "dst_host_same_srv_rate": "0",
+              "dst_host_srv_count": "1"
+            }
+          },
+          {
+            "rule_id": "R07",
+            "rule": "Rejected-connection scan",
+            "category": "probe",
+            "severity": "medium",
+            "why": "Closed ports answer with RST. A source whose connections are rejected at least 60% of the time is enumerating rather than using services.",
+            "targets": "satan, mscan, portsweep",
+            "observed": {
+              "flag": "s0",
+              "rerror_rate": "0.940",
+              "srv_rerror_rate": "0",
+              "count": "488",
+              "dst_host_rerror_rate": "0.920"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "probe",
+          "probability": 1.0,
+          "attack_probability": 1.0,
+          "class_probabilities": {
+            "dos": 0.0,
+            "normal": 0.0,
+            "probe": 1.0,
+            "r2l": 0.0,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "contribution": 0.14806544333867902,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.10098282320874145,
+              "observed": 0.06,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "service_entropy_proxy",
+              "group": "service_spread",
+              "contribution": 0.08875159549016108,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "diff_srv_rate * dst_host_diff_srv_rate. High only when a source sprays many services both in the 2-second window and across the host's history, which is horizontal scanning rather than a busy server."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.07325966994512574,
+              "observed": 0.08,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "flag_serror",
+              "group": "derived",
+              "contribution": -0.06789846546874492,
+              "observed": 1.0,
+              "direction": "lowers",
+              "meaning": "1 if the TCP state is a half-open/incomplete handshake (S0/S1/S2/S3)."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.7005,
+          "threshold": 0.5737,
+          "more_unusual_than": 1.0,
+          "alerted": true,
+          "features": [
+            {
+              "feature": "conn_per_second",
+              "group": "connection_rate",
+              "weight": 0.06591561465333104,
+              "observed": 488.0,
+              "benign_mean": 22.311435386259426,
+              "benign_sd": 53.89339340717375,
+              "z": 8.64092118110627,
+              "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+            },
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.05949462922803675,
+              "observed": 1.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -2.043952959977638,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "weight": 0.05791656940288661,
+              "observed": 1.0,
+              "benign_mean": 0.04013394116686694,
+              "benign_sd": 0.12852846716526856,
+              "z": 7.468120331652968,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "dst_host_srv_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.05157759462109911,
+              "observed": 1.0,
+              "benign_mean": 0.006116448628661863,
+              "benign_sd": 0.05672308087948453,
+              "z": 17.52167787717616,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_same_srv_rate",
+              "group": "service_spread",
+              "weight": 0.05084524514776625,
+              "observed": 0.0,
+              "benign_mean": 0.8118750278425438,
+              "benign_sd": 0.32408873501429547,
+              "z": -2.505101042178255,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "saint",
+          "category": "probe",
+          "is_attack": "1"
+        },
+        "narrative": "(other, state s0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=s0, serror_rate=0.060, srv_serror_rate=1, count=488, dst_host_serror_rate=0.080. A further 2 rule(s) also matched. The supervised model assigns 100.0% to 'probe'. Largest contributions: dst_host_diff_srv_rate=1 (raises probe by 0.148); serror_rate=0.06 (raises probe by 0.101); service_entropy_proxy=1 (raises probe by 0.089). The anomaly layer scores this more unusual than 100.0% of benign training traffic. Most isolating features: conn_per_second=488 (+8.6 SD from the benign mean); dst_host_srv_count=1 (-2.0 SD from the benign mean); dst_host_diff_srv_rate=1 (+7.5 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+      },
+      {
+        "row": 17251,
+        "severity": "critical",
+        "confidence": 0.998,
+        "category": "dos",
+        "layers": [
+          "signature",
+          "supervised",
+          "anomaly"
+        ],
+        "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+        "identity": {
+          "protocol_type": "tcp",
+          "service": "other",
+          "flag": "s0",
+          "duration": 0,
+          "src_bytes": 0,
+          "dst_bytes": 0,
+          "count": 508,
+          "srv_count": 1
+        },
+        "rules": [
+          {
+            "rule_id": "R01",
+            "rule": "TCP SYN flood",
+            "category": "dos",
+            "severity": "critical",
+            "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+            "targets": "neptune, processtable",
+            "observed": {
+              "flag": "s0",
+              "serror_rate": "0.060",
+              "srv_serror_rate": "1",
+              "count": "508",
+              "dst_host_serror_rate": "0.070"
+            }
+          },
+          {
+            "rule_id": "R06",
+            "rule": "Vertical port scan",
+            "category": "probe",
+            "severity": "high",
+            "why": "One host touched across many different services (diff_srv_rate >= 0.55) with a long connection history but few repeats of any single service is port enumeration, not normal client behaviour.",
+            "targets": "portsweep, satan, mscan",
+            "observed": {
+              "diff_srv_rate": "1",
+              "dst_host_count": "255",
+              "dst_host_diff_srv_rate": "1",
+              "dst_host_same_srv_rate": "0",
+              "dst_host_srv_count": "1"
+            }
+          },
+          {
+            "rule_id": "R07",
+            "rule": "Rejected-connection scan",
+            "category": "probe",
+            "severity": "medium",
+            "why": "Closed ports answer with RST. A source whose connections are rejected at least 60% of the time is enumerating rather than using services.",
+            "targets": "satan, mscan, portsweep",
+            "observed": {
+              "flag": "s0",
+              "rerror_rate": "0.940",
+              "srv_rerror_rate": "0",
+              "count": "508",
+              "dst_host_rerror_rate": "0.930"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "probe",
+          "probability": 1.0,
+          "attack_probability": 1.0,
+          "class_probabilities": {
+            "dos": 0.0,
+            "normal": 0.0,
+            "probe": 1.0,
+            "r2l": 0.0,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "contribution": 0.14806544333867902,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.10098282320874145,
+              "observed": 0.06,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "service_entropy_proxy",
+              "group": "service_spread",
+              "contribution": 0.08875159549016108,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "diff_srv_rate * dst_host_diff_srv_rate. High only when a source sprays many services both in the 2-second window and across the host's history, which is horizontal scanning rather than a busy server."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.07325966994512574,
+              "observed": 0.07,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "flag_serror",
+              "group": "derived",
+              "contribution": -0.06789846546874492,
+              "observed": 1.0,
+              "direction": "lowers",
+              "meaning": "1 if the TCP state is a half-open/incomplete handshake (S0/S1/S2/S3)."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.7005,
+          "threshold": 0.5737,
+          "more_unusual_than": 1.0,
+          "alerted": true,
+          "features": [
+            {
+              "feature": "conn_per_second",
+              "group": "connection_rate",
+              "weight": 0.06591561465333104,
+              "observed": 508.0,
+              "benign_mean": 22.311435386259426,
+              "benign_sd": 53.89339340717375,
+              "z": 9.012024181596452,
+              "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+            },
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.05949462922803675,
+              "observed": 1.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -2.043952959977638,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "dst_host_diff_srv_rate",
+              "group": "service_spread",
+              "weight": 0.05791656940288661,
+              "observed": 1.0,
+              "benign_mean": 0.04013394116686694,
+              "benign_sd": 0.12852846716526856,
+              "z": 7.468120331652968,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "dst_host_srv_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.05157759462109911,
+              "observed": 1.0,
+              "benign_mean": 0.006116448628661863,
+              "benign_sd": 0.05672308087948453,
+              "z": 17.52167787717616,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_same_srv_rate",
+              "group": "service_spread",
+              "weight": 0.05084524514776625,
+              "observed": 0.0,
+              "benign_mean": 0.8118750278425438,
+              "benign_sd": 0.32408873501429547,
+              "z": -2.505101042178255,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "satan",
+          "category": "probe",
+          "is_attack": "1"
+        },
+        "narrative": "(other, state s0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=s0, serror_rate=0.060, srv_serror_rate=1, count=508, dst_host_serror_rate=0.070. A further 2 rule(s) also matched. The supervised model assigns 100.0% to 'probe'. Largest contributions: dst_host_diff_srv_rate=1 (raises probe by 0.148); serror_rate=0.06 (raises probe by 0.101); service_entropy_proxy=1 (raises probe by 0.089). The anomaly layer scores this more unusual than 100.0% of benign training traffic. Most isolating features: conn_per_second=508 (+9.0 SD from the benign mean); dst_host_srv_count=1 (-2.0 SD from the benign mean); dst_host_diff_srv_rate=1 (+7.5 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+      }
+    ],
+    "finding": "This is the class the feature set is best suited to, and the result says so: 2,382 of 2,421 scan connections are flagged (98.4% recall) across 6 families, 4 of them at full recall (ipsweep, nmap, portsweep, satan). Scanning is defined by the *spread* of a source's connections rather than their content, and diff_srv_rate, dst_host_diff_srv_rate and the rejected-connection rates measure that spread directly, so a hand-written rule and a learned tree arrive at nearly the same boundary. That is why recall generalises to a scanner absent from training while it collapses for unseen r2l families in scenario 5 -- the signal is geometric, not semantic. The cost of this sensitivity is scenario 1: the same rules that carry this class (R06, R07) account for 126 rule hits on benign traffic, because a monitoring sweep has the same geometry. High recall on this class and a 4.3% benign alarm rate are the same fact measured from two sides, not two independent results."
+  },
+  {
+    "id": 3,
+    "title": "Denial-of-service detection and its cost",
+    "question": "Is the flood detected, and what does detecting it do to the alert queue and to processing time?",
+    "stats": {
+      "connections": 7458,
+      "attacks": 7458,
+      "alerts": 6731,
+      "recall": 0.9025,
+      "precision": 1.0,
+      "false_positive_rate": 0.0,
+      "per_family": {
+        "apache2": 0.9891,
+        "back": 1.0,
+        "land": 1.0,
+        "mailbomb": 0.0137,
+        "neptune": 0.9998,
+        "pod": 0.9756,
+        "processtable": 0.3752,
+        "smurf": 1.0,
+        "teardrop": 1.0,
+        "udpstorm": 1.0
+      },
+      "share_of_all_alerts": 0.6533,
+      "distinct_alert_signatures": 169,
+      "alerts_per_distinct_signature": 39.8,
+      "throughput_rows_per_second": 854.7,
+      "seconds_per_stage": {
+        "signature_s": 0.0828,
+        "supervised_s": 2.2392,
+        "anomaly_s": 24.0539,
+        "total_s": 26.3759
+      }
+    },
+    "rules_involved": {
+      "R07": 3688,
+      "R01": 1377,
+      "R02": 331,
+      "R03": 94,
+      "R04": 48,
+      "R06": 11,
+      "R05": 7,
+      "R08": 3
+    },
+    "examples": [
+      {
+        "row": 22531,
+        "severity": "critical",
+        "confidence": 0.998,
+        "category": "dos",
+        "layers": [
+          "signature",
+          "supervised",
+          "anomaly"
+        ],
+        "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+        "identity": {
+          "protocol_type": "tcp",
+          "service": "private",
+          "flag": "s0",
+          "duration": 0,
+          "src_bytes": 0,
+          "dst_bytes": 0,
+          "count": 300,
+          "srv_count": 12
+        },
+        "rules": [
+          {
+            "rule_id": "R01",
+            "rule": "TCP SYN flood",
+            "category": "dos",
+            "severity": "critical",
+            "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+            "targets": "neptune, processtable",
+            "observed": {
+              "flag": "s0",
+              "serror_rate": "1",
+              "srv_serror_rate": "1",
+              "count": "300",
+              "dst_host_serror_rate": "1"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "dos",
+          "probability": 1.0,
+          "attack_probability": 1.0,
+          "class_probabilities": {
+            "dos": 1.0,
+            "normal": 0.0,
+            "probe": 0.0,
+            "r2l": 0.0,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "flag_serror",
+              "group": "derived",
+              "contribution": 0.10696505445305272,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "1 if the TCP state is a half-open/incomplete handshake (S0/S1/S2/S3)."
+            },
+            {
+              "feature": "srv_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.10089790173718825,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.07609467481167194,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "bytes_per_second",
+              "group": "volume",
+              "contribution": 0.059877993785251916,
+              "observed": 0.0,
+              "direction": "raises",
+              "meaning": "(src_bytes + dst_bytes) / (duration + 1). Separates a long slow session from a burst of the same volume."
+            },
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.05963495727966643,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.6912,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9999,
+          "alerted": true,
+          "features": [
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.0734476612304586,
+              "observed": 12.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -1.9251723266838001,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.07029633587552193,
+              "observed": 1.0,
+              "benign_mean": 0.013440892149146969,
+              "benign_sd": 0.09421079258777539,
+              "z": 10.47182685499312,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.0678550470792645,
+              "observed": 1.0,
+              "benign_mean": 0.013930029847199583,
+              "benign_sd": 0.09200572378763001,
+              "z": 10.717485060265082,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "conn_per_second",
+              "group": "connection_rate",
+              "weight": 0.06288732404047936,
+              "observed": 300.0,
+              "benign_mean": 22.311435386259426,
+              "benign_sd": 53.89339340717375,
+              "z": 5.152552976498553,
+              "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+            },
+            {
+              "feature": "dst_host_srv_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.054884949129881344,
+              "observed": 1.0,
+              "benign_mean": 0.006116448628661863,
+              "benign_sd": 0.05672308087948453,
+              "z": 17.52167787717616,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "neptune",
+          "category": "dos",
+          "is_attack": "1"
+        },
+        "narrative": "(private, state s0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=s0, serror_rate=1, srv_serror_rate=1, count=300, dst_host_serror_rate=1. The supervised model assigns 100.0% to 'dos'. Largest contributions: flag_serror=1 (raises dos by 0.107); srv_serror_rate=1 (raises dos by 0.101); dst_host_serror_rate=1 (raises dos by 0.076). The anomaly layer scores this more unusual than 100.0% of benign training traffic. Most isolating features: dst_host_srv_count=12 (-1.9 SD from the benign mean); serror_rate=1 (+10.5 SD from the benign mean); dst_host_serror_rate=1 (+10.7 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+      },
+      {
+        "row": 22435,
+        "severity": "critical",
+        "confidence": 0.998,
+        "category": "dos",
+        "layers": [
+          "signature",
+          "supervised",
+          "anomaly"
+        ],
+        "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+        "identity": {
+          "protocol_type": "tcp",
+          "service": "private",
+          "flag": "s0",
+          "duration": 0,
+          "src_bytes": 0,
+          "dst_bytes": 0,
+          "count": 287,
+          "srv_count": 18
+        },
+        "rules": [
+          {
+            "rule_id": "R01",
+            "rule": "TCP SYN flood",
+            "category": "dos",
+            "severity": "critical",
+            "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+            "targets": "neptune, processtable",
+            "observed": {
+              "flag": "s0",
+              "serror_rate": "1",
+              "srv_serror_rate": "1",
+              "count": "287",
+              "dst_host_serror_rate": "1"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "dos",
+          "probability": 1.0,
+          "attack_probability": 1.0,
+          "class_probabilities": {
+            "dos": 1.0,
+            "normal": 0.0,
+            "probe": 0.0,
+            "r2l": 0.0,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "flag_serror",
+              "group": "derived",
+              "contribution": 0.10865679570920782,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "1 if the TCP state is a half-open/incomplete handshake (S0/S1/S2/S3)."
+            },
+            {
+              "feature": "srv_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.10030385577807702,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.07614325681592239,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "bytes_per_second",
+              "group": "volume",
+              "contribution": 0.059877993785251916,
+              "observed": 0.0,
+              "direction": "raises",
+              "meaning": "(src_bytes + dst_bytes) / (duration + 1). Separates a long slow session from a burst of the same volume."
+            },
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.05970261440556094,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.6918,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9999,
+          "alerted": true,
+          "features": [
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.0734688225876524,
+              "observed": 18.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -1.8603828903417066,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.07031658928928565,
+              "observed": 1.0,
+              "benign_mean": 0.013440892149146969,
+              "benign_sd": 0.09421079258777539,
+              "z": 10.47182685499312,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.06787459712162924,
+              "observed": 1.0,
+              "benign_mean": 0.013930029847199583,
+              "benign_sd": 0.09200572378763001,
+              "z": 10.717485060265082,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "conn_per_second",
+              "group": "connection_rate",
+              "weight": 0.06290544280838414,
+              "observed": 287.0,
+              "benign_mean": 22.311435386259426,
+              "benign_sd": 53.89339340717375,
+              "z": 4.911336026179935,
+              "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+            },
+            {
+              "feature": "dst_host_srv_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.054900762295251676,
+              "observed": 1.0,
+              "benign_mean": 0.006116448628661863,
+              "benign_sd": 0.05672308087948453,
+              "z": 17.52167787717616,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "neptune",
+          "category": "dos",
+          "is_attack": "1"
+        },
+        "narrative": "(private, state s0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=s0, serror_rate=1, srv_serror_rate=1, count=287, dst_host_serror_rate=1. The supervised model assigns 100.0% to 'dos'. Largest contributions: flag_serror=1 (raises dos by 0.109); srv_serror_rate=1 (raises dos by 0.100); dst_host_serror_rate=1 (raises dos by 0.076). The anomaly layer scores this more unusual than 100.0% of benign training traffic. Most isolating features: dst_host_srv_count=18 (-1.9 SD from the benign mean); serror_rate=1 (+10.5 SD from the benign mean); dst_host_serror_rate=1 (+10.7 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+      }
+    ],
+    "finding": "Flooding recall is 90.2% over 7,458 connections, and where it succeeds the reason is mechanical rather than statistical: a half-open flood pins serror_rate near 1 and drives count into the hundreds, which no benign profile in the corpus reaches. The cost is the queue. DoS traffic produces 6,731 of the 10,303 alerts in this run -- 65% of everything an analyst would see -- across only 169 distinct alert signatures. Per-flow alerting is the wrong granularity for a flood: correlation into one incident per (rule, service, state) collapses it by a factor of 40. The recall that is missing is concentrated in specific families -- mailbomb 1.4% of 293, processtable 37.5% of 685 -- not spread evenly across the class."
+  },
+  {
+    "id": 4,
+    "title": "Credential brute force and privilege escalation (R2L / U2R)",
+    "question": "Beyond scanning and flooding, can the system catch an intruder guessing a password and then escalating to root?",
+    "stats": {
+      "connections": 2954,
+      "attacks": 2954,
+      "alerts": 777,
+      "recall": 0.263,
+      "precision": 1.0,
+      "false_positive_rate": 0.0,
+      "r2l": {
+        "connections": 2887,
+        "attacks": 2887,
+        "alerts": 737,
+        "recall": 0.2553,
+        "precision": 1.0,
+        "false_positive_rate": 0.0
+      },
+      "u2r": {
+        "connections": 67,
+        "attacks": 67,
+        "alerts": 40,
+        "recall": 0.597,
+        "precision": 1.0,
+        "false_positive_rate": 0.0
+      },
+      "per_family": {
+        "buffer_overflow": {
+          "support": 20,
+          "hybrid": 0.9,
+          "signature": 0.8,
+          "supervised": 0.3,
+          "anomaly": 0.1
+        },
+        "ftp_write": {
+          "support": 3,
+          "hybrid": 0.3333,
+          "signature": 0.3333,
+          "supervised": 0.3333,
+          "anomaly": 0.0
+        },
+        "guess_passwd": {
+          "support": 1231,
+          "hybrid": 0.0081,
+          "signature": 0.0,
+          "supervised": 0.0,
+          "anomaly": 0.0081
+        },
+        "httptunnel": {
+          "support": 133,
+          "hybrid": 0.3534,
+          "signature": 0.1353,
+          "supervised": 0.1654,
+          "anomaly": 0.3233
+        },
+        "imap": {
+          "support": 1,
+          "hybrid": 0.0,
+          "signature": 0.0,
+          "supervised": 0.0,
+          "anomaly": 0.0
+        },
+        "loadmodule": {
+          "support": 2,
+          "hybrid": 1.0,
+          "signature": 1.0,
+          "supervised": 0.0,
+          "anomaly": 0.0
+        },
+        "multihop": {
+          "support": 18,
+          "hybrid": 0.3889,
+          "signature": 0.1111,
+          "supervised": 0.2778,
+          "anomaly": 0.0556
+        },
+        "named": {
+          "support": 17,
+          "hybrid": 0.3529,
+          "signature": 0.0,
+          "supervised": 0.2353,
+          "anomaly": 0.1176
+        },
+        "perl": {
+          "support": 2,
+          "hybrid": 0.5,
+          "signature": 0.5,
+          "supervised": 0.5,
+          "anomaly": 0.0
+        },
+        "phf": {
+          "support": 2,
+          "hybrid": 0.5,
+          "signature": 0.5,
+          "supervised": 0.5,
+          "anomaly": 0.0
+        },
+        "ps": {
+          "support": 15,
+          "hybrid": 0.4,
+          "signature": 0.2667,
+          "supervised": 0.1333,
+          "anomaly": 0.0667
+        },
+        "rootkit": {
+          "support": 13,
+          "hybrid": 0.2308,
+          "signature": 0.1538,
+          "supervised": 0.0769,
+          "anomaly": 0.1538
+        },
+        "sendmail": {
+          "support": 14,
+          "hybrid": 0.4286,
+          "signature": 0.4286,
+          "supervised": 0.0,
+          "anomaly": 0.0
+        },
+        "snmpgetattack": {
+          "support": 178,
+          "hybrid": 0.0,
+          "signature": 0.0,
+          "supervised": 0.0,
+          "anomaly": 0.0
+        },
+        "snmpguess": {
+          "support": 331,
+          "hybrid": 0.0,
+          "signature": 0.0,
+          "supervised": 0.0,
+          "anomaly": 0.0
+        },
+        "sqlattack": {
+          "support": 2,
+          "hybrid": 1.0,
+          "signature": 1.0,
+          "supervised": 0.0,
+          "anomaly": 0.0
+        },
+        "warezmaster": {
+          "support": 944,
+          "hybrid": 0.6939,
+          "signature": 0.5328,
+          "supervised": 0.1684,
+          "anomaly": 0.0095
+        },
+        "worm": {
+          "support": 2,
+          "hybrid": 0.0,
+          "signature": 0.0,
+          "supervised": 0.0,
+          "anomaly": 0.0
+        },
+        "xlock": {
+          "support": 9,
+          "hybrid": 0.1111,
+          "signature": 0.1111,
+          "supervised": 0.0,
+          "anomaly": 0.0
+        },
+        "xsnoop": {
+          "support": 4,
+          "hybrid": 0.75,
+          "signature": 0.5,
+          "supervised": 0.25,
+          "anomaly": 0.25
+        },
+        "xterm": {
+          "support": 13,
+          "hybrid": 0.6154,
+          "signature": 0.6154,
+          "supervised": 0.3077,
+          "anomaly": 0.0769
+        }
+      },
+      "hybrid_gain_over_supervised": {
+        "loadmodule": 1.0,
+        "sqlattack": 1.0,
+        "buffer_overflow": 0.6
+      }
+    },
+    "rules_involved": {
+      "R10": 499,
+      "R06": 39,
+      "R11": 37,
+      "R12": 21,
+      "R07": 3,
+      "R09": 2
+    },
+    "examples": [
+      {
+        "row": 17567,
+        "severity": "critical",
+        "confidence": 0.9907,
+        "category": "u2r",
+        "layers": [
+          "signature",
+          "supervised"
+        ],
+        "corroboration": "2 of 3 layers agree (signature, supervised)",
+        "identity": {
+          "protocol_type": "tcp",
+          "service": "telnet",
+          "flag": "sf",
+          "duration": 84,
+          "src_bytes": 2742,
+          "dst_bytes": 5433,
+          "count": 1,
+          "srv_count": 1
+        },
+        "rules": [
+          {
+            "rule_id": "R11",
+            "rule": "Root shell obtained",
+            "category": "u2r",
+            "severity": "critical",
+            "why": "A root shell or an su attempt inside a monitored session is the definition of privilege escalation. Very low volume, very high impact -- exactly the case a rule should own rather than a model trained on 50 examples.",
+            "targets": "buffer_overflow, rootkit, xterm",
+            "observed": {
+              "service": "telnet",
+              "root_shell": "1",
+              "su_attempted": "0",
+              "num_root": "1",
+              "hot": "6",
+              "duration": "84"
+            }
+          },
+          {
+            "rule_id": "R12",
+            "rule": "Root-level file manipulation",
+            "category": "u2r",
+            "severity": "high",
+            "why": "Root-owned file operations combined with new file creation in one session is post-exploitation persistence activity.",
+            "targets": "rootkit, loadmodule, ps",
+            "observed": {
+              "num_root": "1",
+              "num_file_creations": "1",
+              "num_shells": "1",
+              "hot": "6",
+              "num_access_files": "0"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "u2r",
+          "probability": 0.8136,
+          "attack_probability": 0.9041,
+          "class_probabilities": {
+            "dos": 0.0,
+            "normal": 0.0959,
+            "probe": 0.0049,
+            "r2l": 0.0856,
+            "u2r": 0.8136
+          },
+          "features": [
+            {
+              "feature": "root_shell",
+              "group": "authentication",
+              "contribution": 0.1298987537137797,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "Failed logins, guest logins and shell/root activity are the only content-level evidence of brute force and privilege escalation."
+            },
+            {
+              "feature": "service_code",
+              "group": "protocol",
+              "contribution": 0.06458611796798969,
+              "observed": 58.0,
+              "direction": "raises",
+              "meaning": "Protocol, service and TCP flag state give the categorical context that makes the numeric features interpretable."
+            },
+            {
+              "feature": "duration",
+              "group": "volume",
+              "contribution": 0.0610927720981918,
+              "observed": 84.0,
+              "direction": "raises",
+              "meaning": "Byte and packet volumes separate bulk transfers and amplification floods from interactive sessions."
+            },
+            {
+              "feature": "dst_bytes",
+              "group": "volume",
+              "contribution": 0.06054096409070052,
+              "observed": 5433.0,
+              "direction": "raises",
+              "meaning": "Byte and packet volumes separate bulk transfers and amplification floods from interactive sessions."
+            },
+            {
+              "feature": "conn_per_second",
+              "group": "connection_rate",
+              "contribution": 0.05215546346437519,
+              "observed": 0.011764705882352941,
+              "direction": "raises",
+              "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.5249,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9465,
+          "alerted": false,
+          "features": [
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.11518916953284848,
+              "observed": 1.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -2.043952959977638,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "service_code",
+              "group": "protocol",
+              "weight": 0.0870145124470523,
+              "observed": 58.0,
+              "benign_mean": 24.345247464472923,
+              "benign_sd": 13.463421721919016,
+              "z": 2.499717622358641,
+              "meaning": "Protocol, service and TCP flag state give the categorical context that makes the numeric features interpretable."
+            },
+            {
+              "feature": "dst_host_same_srv_rate",
+              "group": "service_spread",
+              "weight": 0.0718937164746324,
+              "observed": 0.0,
+              "benign_mean": 0.8118750278425438,
+              "benign_sd": 0.32408873501429547,
+              "z": -2.505101042178255,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "service_freq",
+              "group": "derived",
+              "weight": 0.07081556691663113,
+              "observed": 0.018678605732974526,
+              "benign_mean": 0.20549448459732889,
+              "benign_sd": 0.13218688660873976,
+              "z": -1.4132708898524184,
+              "meaning": "Share of training connections using this service. Rare or never-before-seen services score near zero."
+            },
+            {
+              "feature": "hot",
+              "group": "authentication",
+              "weight": 0.06089819747193726,
+              "observed": 6.0,
+              "benign_mean": 0.23065500497453337,
+              "benign_sd": 2.3083192051016566,
+              "z": 2.4993705299832607,
+              "meaning": "Failed logins, guest logins and shell/root activity are the only content-level evidence of brute force and privilege escalation."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "buffer_overflow",
+          "category": "u2r",
+          "is_attack": "1"
+        },
+        "narrative": "(telnet, state sf) flagged CRITICAL as u2r with confidence 0.99. Rule R11 (Root shell obtained) matched: A root shell or an su attempt inside a monitored session is the definition of privilege escalation. Very low volume, very high impact -- exactly the case a rule should own rather than a model trained on 50 examples. Observed: service=telnet, root_shell=1, su_attempted=0, num_root=1, hot=6, duration=84. A further 1 rule(s) also matched. The supervised model assigns 81.4% to 'u2r'. Largest contributions: root_shell=1 (raises u2r by 0.130); service_code=58 (raises u2r by 0.065); duration=84 (raises u2r by 0.061). Corroboration: 2 of 3 layers agree (signature, supervised)."
+      },
+      {
+        "row": 3621,
+        "severity": "critical",
+        "confidence": 0.9905,
+        "category": "u2r",
+        "layers": [
+          "signature",
+          "supervised"
+        ],
+        "corroboration": "2 of 3 layers agree (signature, supervised)",
+        "identity": {
+          "protocol_type": "tcp",
+          "service": "telnet",
+          "flag": "sf",
+          "duration": 184,
+          "src_bytes": 2923,
+          "dst_bytes": 5285,
+          "count": 1,
+          "srv_count": 1
+        },
+        "rules": [
+          {
+            "rule_id": "R11",
+            "rule": "Root shell obtained",
+            "category": "u2r",
+            "severity": "critical",
+            "why": "A root shell or an su attempt inside a monitored session is the definition of privilege escalation. Very low volume, very high impact -- exactly the case a rule should own rather than a model trained on 50 examples.",
+            "targets": "buffer_overflow, rootkit, xterm",
+            "observed": {
+              "service": "telnet",
+              "root_shell": "1",
+              "su_attempted": "0",
+              "num_root": "17",
+              "hot": "2",
+              "duration": "184"
+            }
+          },
+          {
+            "rule_id": "R12",
+            "rule": "Root-level file manipulation",
+            "category": "u2r",
+            "severity": "high",
+            "why": "Root-owned file operations combined with new file creation in one session is post-exploitation persistence activity.",
+            "targets": "rootkit, loadmodule, ps",
+            "observed": {
+              "num_root": "17",
+              "num_file_creations": "1",
+              "num_shells": "1",
+              "hot": "2",
+              "num_access_files": "0"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "u2r",
+          "probability": 0.7476,
+          "attack_probability": 0.9011,
+          "class_probabilities": {
+            "dos": 0.0019,
+            "normal": 0.0989,
+            "probe": 0.0083,
+            "r2l": 0.1432,
+            "u2r": 0.7476
+          },
+          "features": [
+            {
+              "feature": "root_shell",
+              "group": "authentication",
+              "contribution": 0.12667400194866044,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "Failed logins, guest logins and shell/root activity are the only content-level evidence of brute force and privilege escalation."
+            },
+            {
+              "feature": "service_code",
+              "group": "protocol",
+              "contribution": 0.062316314360771584,
+              "observed": 58.0,
+              "direction": "raises",
+              "meaning": "Protocol, service and TCP flag state give the categorical context that makes the numeric features interpretable."
+            },
+            {
+              "feature": "dst_bytes",
+              "group": "volume",
+              "contribution": 0.060924526322170304,
+              "observed": 5285.0,
+              "direction": "raises",
+              "meaning": "Byte and packet volumes separate bulk transfers and amplification floods from interactive sessions."
+            },
+            {
+              "feature": "duration",
+              "group": "volume",
+              "contribution": 0.05962527790513537,
+              "observed": 184.0,
+              "direction": "raises",
+              "meaning": "Byte and packet volumes separate bulk transfers and amplification floods from interactive sessions."
+            },
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "contribution": 0.056905928332158684,
+              "observed": 2.0,
+              "direction": "raises",
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.5709,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9888,
+          "alerted": false,
+          "features": [
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.10479155127386021,
+              "observed": 2.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -2.033154720587289,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "dst_host_same_src_port_rate",
+              "group": "service_spread",
+              "weight": 0.08860653663118565,
+              "observed": 1.0,
+              "benign_mean": 0.12172579184181276,
+              "benign_sd": 0.25437988393425265,
+              "z": 3.452608730591241,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "dst_host_srv_diff_host_rate",
+              "group": "service_spread",
+              "weight": 0.07639803769541016,
+              "observed": 1.0,
+              "benign_mean": 0.025995723386238633,
+              "benign_sd": 0.06880696641657262,
+              "z": 14.155605563496632,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "service_code",
+              "group": "protocol",
+              "weight": 0.07622049122909859,
+              "observed": 58.0,
+              "benign_mean": 24.345247464472923,
+              "benign_sd": 13.463421721919016,
+              "z": 2.499717622358641,
+              "meaning": "Protocol, service and TCP flag state give the categorical context that makes the numeric features interpretable."
+            },
+            {
+              "feature": "num_root",
+              "group": "authentication",
+              "weight": 0.072886294304247,
+              "observed": 17.0,
+              "benign_mean": 0.5629241346539359,
+              "benign_sd": 33.36804794316949,
+              "z": 0.49259926422249,
+              "meaning": "Failed logins, guest logins and shell/root activity are the only content-level evidence of brute force and privilege escalation."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "xterm",
+          "category": "u2r",
+          "is_attack": "1"
+        },
+        "narrative": "(telnet, state sf) flagged CRITICAL as u2r with confidence 0.99. Rule R11 (Root shell obtained) matched: A root shell or an su attempt inside a monitored session is the definition of privilege escalation. Very low volume, very high impact -- exactly the case a rule should own rather than a model trained on 50 examples. Observed: service=telnet, root_shell=1, su_attempted=0, num_root=17, hot=2, duration=184. A further 1 rule(s) also matched. The supervised model assigns 74.8% to 'u2r'. Largest contributions: root_shell=1 (raises u2r by 0.127); service_code=58 (raises u2r by 0.062); dst_bytes=5.28e+03 (raises u2r by 0.061). Corroboration: 2 of 3 layers agree (signature, supervised)."
+      },
+      {
+        "row": 20894,
+        "severity": "critical",
+        "confidence": 0.9871,
+        "category": "u2r",
+        "layers": [
+          "signature",
+          "supervised"
+        ],
+        "corroboration": "2 of 3 layers agree (signature, supervised)",
+        "identity": {
+          "protocol_type": "tcp",
+          "service": "telnet",
+          "flag": "sf",
+          "duration": 50,
+          "src_bytes": 226,
+          "dst_bytes": 2615,
+          "count": 1,
+          "srv_count": 1
+        },
+        "rules": [
+          {
+            "rule_id": "R11",
+            "rule": "Root shell obtained",
+            "category": "u2r",
+            "severity": "critical",
+            "why": "A root shell or an su attempt inside a monitored session is the definition of privilege escalation. Very low volume, very high impact -- exactly the case a rule should own rather than a model trained on 50 examples.",
+            "targets": "buffer_overflow, rootkit, xterm",
+            "observed": {
+              "service": "telnet",
+              "root_shell": "1",
+              "su_attempted": "0",
+              "num_root": "5",
+              "hot": "1",
+              "duration": "50"
+            }
+          },
+          {
+            "rule_id": "R12",
+            "rule": "Root-level file manipulation",
+            "category": "u2r",
+            "severity": "high",
+            "why": "Root-owned file operations combined with new file creation in one session is post-exploitation persistence activity.",
+            "targets": "rootkit, loadmodule, ps",
+            "observed": {
+              "num_root": "5",
+              "num_file_creations": "1",
+              "num_shells": "1",
+              "hot": "1",
+              "num_access_files": "1"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "u2r",
+          "probability": 0.7407,
+          "attack_probability": 0.8239,
+          "class_probabilities": {
+            "dos": 0.0,
+            "normal": 0.1761,
+            "probe": 0.0,
+            "r2l": 0.0832,
+            "u2r": 0.7407
+          },
+          "features": [
+            {
+              "feature": "root_shell",
+              "group": "authentication",
+              "contribution": 0.13734444140386273,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "Failed logins, guest logins and shell/root activity are the only content-level evidence of brute force and privilege escalation."
+            },
+            {
+              "feature": "service_code",
+              "group": "protocol",
+              "contribution": 0.0678547127619646,
+              "observed": 58.0,
+              "direction": "raises",
+              "meaning": "Protocol, service and TCP flag state give the categorical context that makes the numeric features interpretable."
+            },
+            {
+              "feature": "num_file_creations",
+              "group": "authentication",
+              "contribution": 0.062335277122389066,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "Failed logins, guest logins and shell/root activity are the only content-level evidence of brute force and privilege escalation."
+            },
+            {
+              "feature": "bytes_per_second",
+              "group": "volume",
+              "contribution": 0.06220597567791743,
+              "observed": 55.705882352941174,
+              "direction": "raises",
+              "meaning": "(src_bytes + dst_bytes) / (duration + 1). Separates a long slow session from a burst of the same volume."
+            },
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "contribution": 0.06189868241613348,
+              "observed": 2.0,
+              "direction": "raises",
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.4935,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9011,
+          "alerted": false,
+          "features": [
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.12520231712682425,
+              "observed": 2.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -2.033154720587289,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "service_code",
+              "group": "protocol",
+              "weight": 0.09239240697499164,
+              "observed": 58.0,
+              "benign_mean": 24.345247464472923,
+              "benign_sd": 13.463421721919016,
+              "z": 2.499717622358641,
+              "meaning": "Protocol, service and TCP flag state give the categorical context that makes the numeric features interpretable."
+            },
+            {
+              "feature": "service_freq",
+              "group": "derived",
+              "weight": 0.07271373242081951,
+              "observed": 0.018678605732974526,
+              "benign_mean": 0.20549448459732889,
+              "benign_sd": 0.13218688660873976,
+              "z": -1.4132708898524184,
+              "meaning": "Share of training connections using this service. Rare or never-before-seen services score near zero."
+            },
+            {
+              "feature": "dst_host_same_srv_rate",
+              "group": "service_spread",
+              "weight": 0.06726211576864159,
+              "observed": 0.01,
+              "benign_mean": 0.8118750278425438,
+              "benign_sd": 0.32408873501429547,
+              "z": -2.4742452952188336,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "num_root",
+              "group": "authentication",
+              "weight": 0.06587312147982669,
+              "observed": 5.0,
+              "benign_mean": 0.5629241346539359,
+              "benign_sd": 33.36804794316949,
+              "z": 0.1329737919611909,
+              "meaning": "Failed logins, guest logins and shell/root activity are the only content-level evidence of brute force and privilege escalation."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "xsnoop",
+          "category": "r2l",
+          "is_attack": "1"
+        },
+        "narrative": "(telnet, state sf) flagged CRITICAL as u2r with confidence 0.99. Rule R11 (Root shell obtained) matched: A root shell or an su attempt inside a monitored session is the definition of privilege escalation. Very low volume, very high impact -- exactly the case a rule should own rather than a model trained on 50 examples. Observed: service=telnet, root_shell=1, su_attempted=0, num_root=5, hot=1, duration=50. A further 1 rule(s) also matched. The supervised model assigns 74.1% to 'u2r'. Largest contributions: root_shell=1 (raises u2r by 0.137); service_code=58 (raises u2r by 0.068); num_file_creations=1 (raises u2r by 0.062). Corroboration: 2 of 3 layers agree (signature, supervised)."
+      }
+    ],
+    "finding": "This is where the hybrid architecture earns its cost, and also where the system is weakest overall. R2L recall is 25.5% and U2R 59.7% across 21 families, and the aggregate hides which layer is doing the work. These are the rarest classes in the corpus, so the supervised layer has the least to learn from: it recovers guess_passwd 0.0%, sendmail 0.0%, snmpgetattack 0.0%. The signature layer does not care about class balance -- R09 counts failed logins, R10 flags guest sessions that create files, and R11/R12 look for root_shell, su_attempted and root-level file activity -- so on 9 of these families it is the strongest layer of the three. The largest hybrid-over-supervised gains are loadmodule +100%, sqlattack +100%, buffer_overflow +60%. The anomaly layer contributes little here (its best family here is httptunnel at 32.3%), because a brute-force login and a root shell are statistically ordinary connections; where it is 0.000 that is a null result and it is reported as one. Two honest caveats remain. First, this is not detection of the attack but of its aftermath -- a matched R11 means a root shell was already obtained. Second, the same counters fire on an administrator legitimately using su, which is part of the scenario-1 false-positive rate: the signature layer trades false alarms on benign admin activity for recall on privilege escalation. On this corpus that trade is worth making, but it is a trade, not a free improvement."
+  },
+  {
+    "id": 5,
+    "title": "Missed and ambiguous cases: attacks absent from training",
+    "question": "What does the system fail on, and is that failure fixable within this design?",
+    "stats": {
+      "recall_on_families_seen_in_training": 0.8305,
+      "recall_on_families_absent_from_training": 0.6259,
+      "recall_gap": 0.2046,
+      "worst_family": {
+        "family": "snmpguess",
+        "category": "r2l",
+        "support": 331,
+        "hybrid_recall": 0.0,
+        "signature_recall": 0.0,
+        "supervised_recall": 0.0,
+        "anomaly_recall": 0.0
+      },
+      "novel_families": [
+        {
+          "family": "snmpguess",
+          "category": "r2l",
+          "support": 331,
+          "hybrid_recall": 0.0,
+          "signature_recall": 0.0,
+          "supervised_recall": 0.0,
+          "anomaly_recall": 0.0
+        },
+        {
+          "family": "snmpgetattack",
+          "category": "r2l",
+          "support": 178,
+          "hybrid_recall": 0.0,
+          "signature_recall": 0.0,
+          "supervised_recall": 0.0,
+          "anomaly_recall": 0.0
+        },
+        {
+          "family": "worm",
+          "category": "r2l",
+          "support": 2,
+          "hybrid_recall": 0.0,
+          "signature_recall": 0.0,
+          "supervised_recall": 0.0,
+          "anomaly_recall": 0.0
+        },
+        {
+          "family": "mailbomb",
+          "category": "dos",
+          "support": 293,
+          "hybrid_recall": 0.0137,
+          "signature_recall": 0.0137,
+          "supervised_recall": 0.0,
+          "anomaly_recall": 0.0
+        },
+        {
+          "family": "xlock",
+          "category": "r2l",
+          "support": 9,
+          "hybrid_recall": 0.1111,
+          "signature_recall": 0.1111,
+          "supervised_recall": 0.0,
+          "anomaly_recall": 0.0
+        },
+        {
+          "family": "named",
+          "category": "r2l",
+          "support": 17,
+          "hybrid_recall": 0.3529,
+          "signature_recall": 0.0,
+          "supervised_recall": 0.2353,
+          "anomaly_recall": 0.1176
+        },
+        {
+          "family": "httptunnel",
+          "category": "r2l",
+          "support": 133,
+          "hybrid_recall": 0.3534,
+          "signature_recall": 0.1353,
+          "supervised_recall": 0.1654,
+          "anomaly_recall": 0.3233
+        },
+        {
+          "family": "processtable",
+          "category": "dos",
+          "support": 685,
+          "hybrid_recall": 0.3752,
+          "signature_recall": 0.0044,
+          "supervised_recall": 0.0876,
+          "anomaly_recall": 0.3431
+        },
+        {
+          "family": "ps",
+          "category": "u2r",
+          "support": 15,
+          "hybrid_recall": 0.4,
+          "signature_recall": 0.2667,
+          "supervised_recall": 0.1333,
+          "anomaly_recall": 0.0667
+        },
+        {
+          "family": "sendmail",
+          "category": "r2l",
+          "support": 14,
+          "hybrid_recall": 0.4286,
+          "signature_recall": 0.4286,
+          "supervised_recall": 0.0,
+          "anomaly_recall": 0.0
+        },
+        {
+          "family": "xterm",
+          "category": "u2r",
+          "support": 13,
+          "hybrid_recall": 0.6154,
+          "signature_recall": 0.6154,
+          "supervised_recall": 0.3077,
+          "anomaly_recall": 0.0769
+        },
+        {
+          "family": "xsnoop",
+          "category": "r2l",
+          "support": 4,
+          "hybrid_recall": 0.75,
+          "signature_recall": 0.5,
+          "supervised_recall": 0.25,
+          "anomaly_recall": 0.25
+        },
+        {
+          "family": "mscan",
+          "category": "probe",
+          "support": 996,
+          "hybrid_recall": 0.9649,
+          "signature_recall": 0.5602,
+          "supervised_recall": 0.6566,
+          "anomaly_recall": 0.9006
+        },
+        {
+          "family": "saint",
+          "category": "probe",
+          "support": 319,
+          "hybrid_recall": 0.9875,
+          "signature_recall": 0.6332,
+          "supervised_recall": 0.9875,
+          "anomaly_recall": 0.6207
+        },
+        {
+          "family": "apache2",
+          "category": "dos",
+          "support": 737,
+          "hybrid_recall": 0.9891,
+          "signature_recall": 0.7422,
+          "supervised_recall": 0.2374,
+          "anomaly_recall": 0.8087
+        },
+        {
+          "family": "sqlattack",
+          "category": "u2r",
+          "support": 2,
+          "hybrid_recall": 1.0,
+          "signature_recall": 1.0,
+          "supervised_recall": 0.0,
+          "anomaly_recall": 0.0
+        },
+        {
+          "family": "udpstorm",
+          "category": "dos",
+          "support": 2,
+          "hybrid_recall": 1.0,
+          "signature_recall": 0.0,
+          "supervised_recall": 1.0,
+          "anomaly_recall": 0.0
+        }
+      ]
+    },
+    "rules_involved": {},
+    "examples": [
+      {
+        "row": 1365,
+        "severity": "info",
+        "confidence": 0.0,
+        "category": "normal",
+        "layers": [],
+        "corroboration": "no layer flagged this connection",
+        "identity": {
+          "protocol_type": "udp",
+          "service": "private",
+          "flag": "sf",
+          "duration": 0,
+          "src_bytes": 49,
+          "dst_bytes": 0,
+          "count": 374,
+          "srv_count": 374
+        },
+        "rules": [],
+        "supervised": {
+          "predicted": "normal",
+          "probability": 0.68,
+          "attack_probability": 0.32,
+          "class_probabilities": {
+            "dos": 0.2406,
+            "normal": 0.68,
+            "probe": 0.0795,
+            "r2l": 0.0,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "contribution": 0.11399050692705756,
+              "observed": 255.0,
+              "direction": "raises",
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "dst_bytes",
+              "group": "volume",
+              "contribution": -0.09515689875583809,
+              "observed": 0.0,
+              "direction": "lowers",
+              "meaning": "Byte and packet volumes separate bulk transfers and amplification floods from interactive sessions."
+            },
+            {
+              "feature": "src_bytes",
+              "group": "volume",
+              "contribution": 0.09151994106293823,
+              "observed": 49.0,
+              "direction": "raises",
+              "meaning": "Byte and packet volumes separate bulk transfers and amplification floods from interactive sessions."
+            },
+            {
+              "feature": "log_dst_bytes",
+              "group": "volume",
+              "contribution": -0.08805504236914662,
+              "observed": 0.0,
+              "direction": "lowers",
+              "meaning": "log1p(dst_bytes)."
+            },
+            {
+              "feature": "service_freq",
+              "group": "derived",
+              "contribution": 0.08482538733423085,
+              "observed": 0.17347368086812254,
+              "direction": "raises",
+              "meaning": "Share of training connections using this service. Rare or never-before-seen services score near zero."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.5328,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9553,
+          "alerted": false,
+          "features": [
+            {
+              "feature": "conn_per_second",
+              "group": "connection_rate",
+              "weight": 0.12118785373337077,
+              "observed": 374.0,
+              "benign_mean": 22.311435386259426,
+              "benign_sd": 53.89339340717375,
+              "z": 6.525634078312229,
+              "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+            },
+            {
+              "feature": "count",
+              "group": "connection_rate",
+              "weight": 0.077997508385429,
+              "observed": 374.0,
+              "benign_mean": 22.517945443475938,
+              "benign_sd": 54.02568493134367,
+              "z": 6.5058324573430335,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "proto_tcp",
+              "group": "derived",
+              "weight": 0.07412355568719732,
+              "observed": 0.0,
+              "benign_mean": 0.795925337451554,
+              "benign_sd": 0.4030238140040631,
+              "z": -1.9748841378478192,
+              "meaning": "Protocol indicator."
+            },
+            {
+              "feature": "log_dst_bytes",
+              "group": "volume",
+              "weight": 0.0725093626087867,
+              "observed": 0.0,
+              "benign_mean": 5.577905509197949,
+              "benign_sd": 2.932681538184525,
+              "z": -1.9019813220670896,
+              "meaning": "log1p(dst_bytes)."
+            },
+            {
+              "feature": "srv_count",
+              "group": "connection_rate",
+              "weight": 0.06892725972212373,
+              "observed": 374.0,
+              "benign_mean": 27.68565403976657,
+              "benign_sd": 60.181886847145826,
+              "z": 5.754461418596377,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "snmpguess",
+          "category": "r2l",
+          "is_attack": "1"
+        },
+        "narrative": "(private, state sf) flagged INFO as normal with confidence 0.00. Corroboration: no layer flagged this connection."
+      },
+      {
+        "row": 3073,
+        "severity": "info",
+        "confidence": 0.0,
+        "category": "normal",
+        "layers": [],
+        "corroboration": "no layer flagged this connection",
+        "identity": {
+          "protocol_type": "icmp",
+          "service": "urp_i",
+          "flag": "sf",
+          "duration": 0,
+          "src_bytes": 36,
+          "dst_bytes": 0,
+          "count": 1,
+          "srv_count": 2
+        },
+        "rules": [],
+        "supervised": {
+          "predicted": "normal",
+          "probability": 0.7706,
+          "attack_probability": 0.2294,
+          "class_probabilities": {
+            "dos": 0.05,
+            "normal": 0.7706,
+            "probe": 0.1491,
+            "r2l": 0.022,
+            "u2r": 0.0083
+          },
+          "features": [
+            {
+              "feature": "bytes_per_second",
+              "group": "volume",
+              "contribution": 0.13472682983953782,
+              "observed": 36.0,
+              "direction": "raises",
+              "meaning": "(src_bytes + dst_bytes) / (duration + 1). Separates a long slow session from a burst of the same volume."
+            },
+            {
+              "feature": "log_src_bytes",
+              "group": "volume",
+              "contribution": 0.13421217356471654,
+              "observed": 3.6109179126442243,
+              "direction": "raises",
+              "meaning": "log1p(src_bytes) -- byte counts span six orders of magnitude; the log makes the scale learnable."
+            },
+            {
+              "feature": "byte_ratio",
+              "group": "volume",
+              "contribution": 0.11942687628414991,
+              "observed": 0.972972972972973,
+              "direction": "raises",
+              "meaning": "src_bytes / (src_bytes + dst_bytes + 1). Near 1 means the client talked and the server never answered, the shape of a scan or a flood; near 0 is a download."
+            },
+            {
+              "feature": "dst_host_same_src_port_rate",
+              "group": "service_spread",
+              "contribution": -0.062316758707260625,
+              "observed": 1.0,
+              "direction": "lowers",
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "src_bytes",
+              "group": "volume",
+              "contribution": 0.05320677398740369,
+              "observed": 36.0,
+              "direction": "raises",
+              "meaning": "Byte and packet volumes separate bulk transfers and amplification floods from interactive sessions."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.5093,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.918,
+          "alerted": false,
+          "features": [
+            {
+              "feature": "dst_host_srv_count",
+              "group": "connection_rate",
+              "weight": 0.097074278921392,
+              "observed": 16.0,
+              "benign_mean": 190.28576095511042,
+              "benign_sd": 92.6076894436853,
+              "z": -1.8819793691224045,
+              "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+            },
+            {
+              "feature": "dst_host_same_src_port_rate",
+              "group": "service_spread",
+              "weight": 0.08585004622502888,
+              "observed": 1.0,
+              "benign_mean": 0.12172579184181276,
+              "benign_sd": 0.25437988393425265,
+              "z": 3.452608730591241,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "proto_tcp",
+              "group": "derived",
+              "weight": 0.07755501371213547,
+              "observed": 0.0,
+              "benign_mean": 0.795925337451554,
+              "benign_sd": 0.4030238140040631,
+              "z": -1.9748841378478192,
+              "meaning": "Protocol indicator."
+            },
+            {
+              "feature": "service_code",
+              "group": "protocol",
+              "weight": 0.07495844707597005,
+              "observed": 63.0,
+              "benign_mean": 24.345247464472923,
+              "benign_sd": 13.463421721919016,
+              "z": 2.8710942384427818,
+              "meaning": "Protocol, service and TCP flag state give the categorical context that makes the numeric features interpretable."
+            },
+            {
+              "feature": "proto_icmp",
+              "group": "derived",
+              "weight": 0.06937632122140208,
+              "observed": 1.0,
+              "benign_mean": 0.019437803483658287,
+              "benign_sd": 0.13805786931355235,
+              "z": 7.102544761786248,
+              "meaning": "Protocol indicator."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "snmpguess",
+          "category": "r2l",
+          "is_attack": "1"
+        },
+        "narrative": "(urp_i, state sf) flagged INFO as normal with confidence 0.00. Corroboration: no layer flagged this connection."
+      }
+    ],
+    "finding": "Recall on attack families present in the training labels is 83.0%; on families absent from them it is 62.6%. That gap of 20% is the single most important number in this evaluation, and it is the one a headline accuracy figure hides. The worst case is 'snmpguess' (r2l, 331 connections): hybrid recall 0.0%, with the signature layer at 0.0%, the supervised layer at 0.0% and the anomaly layer at 0.0%. Every layer fails for its own reason and the reasons compound rather than cancel: no rule was written for behaviour nobody had characterised, the classifier has no decision region for a class it never saw, and the anomaly layer -- the one layer that is supposed to cover exactly this -- is silent because these connections are not statistically unusual. They are ordinary-looking sessions on ordinary services carrying a hostile payload. At connection-record granularity they are genuinely indistinguishable from benign traffic, so this is not a tuning problem: no threshold on these features separates them. Closing it needs different evidence -- payload inspection, or host-level telemetry -- not a better model over the same features."
+  },
+  {
+    "id": 6,
+    "title": "Raw pcap: capture, flow assembly and detection end to end",
+    "question": "Given packets rather than a feature table, does the pipeline still work -- and what does flow assembly lose?",
+    "stats": {
+      "pcap": "/sessions/tender-affectionate-fermat/mnt/outputs/ai-nids/data/raw/demo_capture.pcap",
+      "flows": 755,
+      "parse_seconds": 2.017,
+      "alerts": 665,
+      "by_source": {
+        "10.0.0.50": {
+          "flows": 90,
+          "alerts": 0,
+          "alert_rate": 0.0,
+          "top_severity": "none",
+          "rules": {}
+        },
+        "10.0.0.66": {
+          "flows": 30,
+          "alerts": 30,
+          "alert_rate": 1.0,
+          "top_severity": "critical",
+          "rules": {
+            "R07": 27,
+            "R06": 23
+          }
+        },
+        "10.0.0.77": {
+          "flows": 40,
+          "alerts": 40,
+          "alert_rate": 1.0,
+          "top_severity": "low",
+          "rules": {}
+        },
+        "10.0.0.99": {
+          "flows": 595,
+          "alerts": 595,
+          "alert_rate": 1.0,
+          "top_severity": "critical",
+          "rules": {
+            "R01": 495
+          }
+        }
+      },
+      "queue": {
+        "rows": 755,
+        "alerts": 665,
+        "alert_rate": 0.8807947019867549,
+        "by_severity": {
+          "critical": 603,
+          "high": 18,
+          "low": 42,
+          "medium": 2
+        },
+        "by_layer": {
+          "signature": 524,
+          "supervised": 665,
+          "anomaly": 623
+        },
+        "timing": {
+          "signature_s": 0.015755635000004986,
+          "supervised_s": 0.17920726200009085,
+          "anomaly_s": 0.5031734730000608,
+          "total_s": 0.6981363700001566,
+          "rows_per_second": 1081.4506054165759
+        }
+      }
+    },
+    "rules_involved": {
+      "R01": 495,
+      "R07": 27,
+      "R06": 23
+    },
+    "examples": [
+      {
+        "row": 360,
+        "severity": "critical",
+        "confidence": 0.9961,
+        "category": "dos",
+        "layers": [
+          "signature",
+          "supervised",
+          "anomaly"
+        ],
+        "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+        "identity": {
+          "src_ip": "10.0.0.99",
+          "dst_ip": "10.0.0.20",
+          "dst_port": 80,
+          "start_time": 1760000036.936,
+          "protocol_type": "tcp",
+          "service": "http",
+          "flag": "S0",
+          "duration": 0.0,
+          "src_bytes": 0.0,
+          "dst_bytes": 0.0,
+          "count": 240.0,
+          "srv_count": 240.0
+        },
+        "rules": [
+          {
+            "rule_id": "R01",
+            "rule": "TCP SYN flood",
+            "category": "dos",
+            "severity": "critical",
+            "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+            "targets": "neptune, processtable",
+            "observed": {
+              "flag": "S0",
+              "serror_rate": "1",
+              "srv_serror_rate": "1",
+              "count": "240",
+              "dst_host_serror_rate": "1"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "dos",
+          "probability": 0.7253,
+          "attack_probability": 0.9057,
+          "class_probabilities": {
+            "dos": 0.7253,
+            "normal": 0.0943,
+            "probe": 0.0963,
+            "r2l": 0.0842,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "dst_host_same_src_port_rate",
+              "group": "service_spread",
+              "contribution": -0.208229520712734,
+              "observed": 1.0,
+              "direction": "lowers",
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "flag_serror",
+              "group": "derived",
+              "contribution": 0.117174524422844,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "1 if the TCP state is a half-open/incomplete handshake (S0/S1/S2/S3)."
+            },
+            {
+              "feature": "srv_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.11084535079580361,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.1035674453802347,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.08974510346920331,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.663,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9996,
+          "alerted": true,
+          "features": [
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.07487638808375754,
+              "observed": 1.0,
+              "benign_mean": 0.013440892149146969,
+              "benign_sd": 0.09421079258777539,
+              "z": 10.47182685499312,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_same_src_port_rate",
+              "group": "service_spread",
+              "weight": 0.07284094862690327,
+              "observed": 1.0,
+              "benign_mean": 0.12172579184181276,
+              "benign_sd": 0.25437988393425265,
+              "z": 3.452608730591241,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.07133780320938853,
+              "observed": 1.0,
+              "benign_mean": 0.013930029847199583,
+              "benign_sd": 0.09200572378763001,
+              "z": 10.717485060265082,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_srv_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.058941054872487506,
+              "observed": 1.0,
+              "benign_mean": 0.006116448628661863,
+              "benign_sd": 0.05672308087948453,
+              "z": 17.52167787717616,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "log_src_bytes",
+              "group": "volume",
+              "weight": 0.05755407736584548,
+              "observed": 0.0,
+              "benign_mean": 5.259490661805833,
+              "benign_sd": 1.8441980087937981,
+              "z": -2.8519121247971713,
+              "meaning": "log1p(src_bytes) -- byte counts span six orders of magnitude; the log makes the scale learnable."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "unknown",
+          "category": "unknown",
+          "is_attack": "0"
+        },
+        "narrative": "10.0.0.99 -> 10.0.0.20:80 (http, state S0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=S0, serror_rate=1, srv_serror_rate=1, count=240, dst_host_serror_rate=1. The supervised model assigns 72.5% to 'dos'. Largest contributions: dst_host_same_src_port_rate=1 (lowers dos by 0.208); flag_serror=1 (raises dos by 0.117); srv_serror_rate=1 (raises dos by 0.111). The anomaly layer scores this more unusual than 100.0% of benign training traffic. Most isolating features: serror_rate=1 (+10.5 SD from the benign mean); dst_host_same_src_port_rate=1 (+3.5 SD from the benign mean); dst_host_serror_rate=1 (+10.7 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+      },
+      {
+        "row": 361,
+        "severity": "critical",
+        "confidence": 0.9961,
+        "category": "dos",
+        "layers": [
+          "signature",
+          "supervised",
+          "anomaly"
+        ],
+        "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+        "identity": {
+          "src_ip": "10.0.0.99",
+          "dst_ip": "10.0.0.20",
+          "dst_port": 80,
+          "start_time": 1760000036.944,
+          "protocol_type": "tcp",
+          "service": "http",
+          "flag": "S0",
+          "duration": 0.0,
+          "src_bytes": 0.0,
+          "dst_bytes": 0.0,
+          "count": 241.0,
+          "srv_count": 241.0
+        },
+        "rules": [
+          {
+            "rule_id": "R01",
+            "rule": "TCP SYN flood",
+            "category": "dos",
+            "severity": "critical",
+            "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+            "targets": "neptune, processtable",
+            "observed": {
+              "flag": "S0",
+              "serror_rate": "1",
+              "srv_serror_rate": "1",
+              "count": "241",
+              "dst_host_serror_rate": "1"
+            }
+          }
+        ],
+        "supervised": {
+          "predicted": "dos",
+          "probability": 0.7253,
+          "attack_probability": 0.9057,
+          "class_probabilities": {
+            "dos": 0.7253,
+            "normal": 0.0943,
+            "probe": 0.0963,
+            "r2l": 0.0842,
+            "u2r": 0.0
+          },
+          "features": [
+            {
+              "feature": "dst_host_same_src_port_rate",
+              "group": "service_spread",
+              "contribution": -0.208229520712734,
+              "observed": 1.0,
+              "direction": "lowers",
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "flag_serror",
+              "group": "derived",
+              "contribution": 0.117174524422844,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "1 if the TCP state is a half-open/incomplete handshake (S0/S1/S2/S3)."
+            },
+            {
+              "feature": "srv_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.11084535079580361,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.1035674453802347,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "contribution": 0.08974510346920331,
+              "observed": 1.0,
+              "direction": "raises",
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            }
+          ]
+        },
+        "anomaly": {
+          "score": 0.663,
+          "threshold": 0.5737,
+          "more_unusual_than": 0.9996,
+          "alerted": true,
+          "features": [
+            {
+              "feature": "serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.07487638808375754,
+              "observed": 1.0,
+              "benign_mean": 0.013440892149146969,
+              "benign_sd": 0.09421079258777539,
+              "z": 10.47182685499312,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_same_src_port_rate",
+              "group": "service_spread",
+              "weight": 0.07284094862690327,
+              "observed": 1.0,
+              "benign_mean": 0.12172579184181276,
+              "benign_sd": 0.25437988393425265,
+              "z": 3.452608730591241,
+              "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+            },
+            {
+              "feature": "dst_host_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.07133780320938853,
+              "observed": 1.0,
+              "benign_mean": 0.013930029847199583,
+              "benign_sd": 0.09200572378763001,
+              "z": 10.717485060265082,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "dst_host_srv_serror_rate",
+              "group": "error_behaviour",
+              "weight": 0.058941054872487506,
+              "observed": 1.0,
+              "benign_mean": 0.006116448628661863,
+              "benign_sd": 0.05672308087948453,
+              "z": 17.52167787717616,
+              "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+            },
+            {
+              "feature": "log_src_bytes",
+              "group": "volume",
+              "weight": 0.05755407736584548,
+              "observed": 0.0,
+              "benign_mean": 5.259490661805833,
+              "benign_sd": 1.8441980087937981,
+              "z": -2.8519121247971713,
+              "meaning": "log1p(src_bytes) -- byte counts span six orders of magnitude; the log makes the scale learnable."
+            }
+          ]
+        },
+        "ground_truth": {
+          "label": "unknown",
+          "category": "unknown",
+          "is_attack": "0"
+        },
+        "narrative": "10.0.0.99 -> 10.0.0.20:80 (http, state S0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=S0, serror_rate=1, srv_serror_rate=1, count=241, dst_host_serror_rate=1. The supervised model assigns 72.5% to 'dos'. Largest contributions: dst_host_same_src_port_rate=1 (lowers dos by 0.208); flag_serror=1 (raises dos by 0.117); srv_serror_rate=1 (raises dos by 0.111). The anomaly layer scores this more unusual than 100.0% of benign training traffic. Most isolating features: serror_rate=1 (+10.5 SD from the benign mean); dst_host_same_src_port_rate=1 (+3.5 SD from the benign mean); dst_host_serror_rate=1 (+10.7 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+      }
+    ],
+    "finding": "The pipeline runs unchanged on flows assembled from raw packets, which is the useful part: the same rules and the same fitted models apply to 755 flows reconstructed from the capture in 2.02s. What the capture shows is the limit of the record format rather than of the detector. No alert at all is raised for 10.0.0.50 (0/90 flows, top severity none). Rule-backed detections: 10.0.0.66 (30/30 flows, top severity critical) via R07 x27, R06 x23; 10.0.0.99 (595/595 flows, top severity critical) via R01 x495. Flagged by the learned layers with no rule behind them: 10.0.0.77 (40/40 flows, top severity low). Those are the interesting ones. They are detected, but they are detected weakly -- no signature matched, so nothing corroborates the models and the corroboration discount pushes them to the bottom of the queue. The structural reason is the record format: the dst_host_* features summarise behaviour per destination, and a sweep touches each destination once, so that history is empty at the moment each flow is scored. A scan that spreads across hosts defeats features that summarise behaviour per host, and the flow-level rules that would catch it have nothing to count. That is an argument for correlating across destinations at a level above the flow record, which this design does not do."
+  }
+]

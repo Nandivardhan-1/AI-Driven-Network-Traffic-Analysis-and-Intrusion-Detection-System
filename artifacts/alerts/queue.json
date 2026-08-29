@@ -1,0 +1,802 @@
+[
+  {
+    "row": 10621,
+    "severity": "critical",
+    "confidence": 0.9978,
+    "category": "dos",
+    "layers": [
+      "signature",
+      "supervised",
+      "anomaly"
+    ],
+    "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+    "identity": {
+      "protocol_type": "tcp",
+      "service": "private",
+      "flag": "S0",
+      "duration": 0.0,
+      "src_bytes": 0.0,
+      "dst_bytes": 0.0,
+      "count": 394.0,
+      "srv_count": 496.0
+    },
+    "rules": [
+      {
+        "rule_id": "R01",
+        "rule": "TCP SYN flood",
+        "category": "dos",
+        "severity": "critical",
+        "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+        "targets": "neptune, processtable",
+        "observed": {
+          "flag": "S0",
+          "serror_rate": "0.972",
+          "srv_serror_rate": "0.993",
+          "count": "394",
+          "dst_host_serror_rate": "0.998"
+        }
+      }
+    ],
+    "supervised": {
+      "predicted": "dos",
+      "probability": 0.9997,
+      "attack_probability": 1.0,
+      "class_probabilities": {
+        "dos": 0.9997,
+        "normal": 0.0,
+        "probe": 0.0003,
+        "r2l": 0.0,
+        "u2r": 0.0
+      },
+      "features": [
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "contribution": 0.1370940988866841,
+          "observed": 394.0,
+          "direction": "raises",
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "contribution": 0.13108084616368265,
+          "observed": 394.0,
+          "direction": "raises",
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "dst_host_srv_serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.08256488031681407,
+          "observed": 0.9470749665886409,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.08074086196162562,
+          "observed": 0.9720268454285359,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "srv_serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.07007715838767588,
+          "observed": 0.9932736263973616,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        }
+      ]
+    },
+    "anomaly": {
+      "score": 0.6372,
+      "threshold": 0.5923,
+      "more_unusual_than": 0.9993,
+      "alerted": true,
+      "features": [
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "weight": 0.082300201507596,
+          "observed": 394.0,
+          "benign_mean": 19.89849108367627,
+          "benign_sd": 49.61929726240521,
+          "z": 7.539435855730412,
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "error_pressure",
+          "group": "error_behaviour",
+          "weight": 0.07607928566229152,
+          "observed": 0.9932736263973616,
+          "benign_mean": 0.06595614078569668,
+          "benign_sd": 0.1822634584248065,
+          "z": 5.087786074213188,
+          "meaning": "max(serror_rate, srv_serror_rate) + max(rerror_rate, srv_rerror_rate), in [0, 2]. One number for 'connections here are failing', which is what both scanning and SYN flooding produce."
+        },
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "weight": 0.06980311445986703,
+          "observed": 394.0,
+          "benign_mean": 12.739264380607418,
+          "benign_sd": 36.293866374546404,
+          "z": 10.504825572587057,
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "dst_host_same_src_port_rate",
+          "group": "service_spread",
+          "weight": 0.06332494533340297,
+          "observed": 0.9746418326626252,
+          "benign_mean": 0.40727661720075936,
+          "benign_sd": 0.22632816589300409,
+          "z": 2.506825490425641,
+          "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+        },
+        {
+          "feature": "diff_srv_rate",
+          "group": "service_spread",
+          "weight": 0.0619904704146946,
+          "observed": 0.8467951269154598,
+          "benign_mean": 0.07528748364880514,
+          "benign_sd": 0.11646092490427604,
+          "z": 6.6246051531944135,
+          "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+        }
+      ]
+    },
+    "ground_truth": {
+      "label": "neptune",
+      "category": "dos",
+      "is_attack": "1"
+    },
+    "narrative": "(private, state S0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=S0, serror_rate=0.972, srv_serror_rate=0.993, count=394, dst_host_serror_rate=0.998. The supervised model assigns 100.0% to 'dos'. Largest contributions: conn_per_second=394 (raises dos by 0.137); count=394 (raises dos by 0.131); dst_host_srv_serror_rate=0.947 (raises dos by 0.083). The anomaly layer scores this more unusual than 99.9% of benign training traffic. Most isolating features: count=394 (+7.5 SD from the benign mean); error_pressure=0.993 (+5.1 SD from the benign mean); conn_per_second=394 (+10.5 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+  },
+  {
+    "row": 835,
+    "severity": "critical",
+    "confidence": 0.9977,
+    "category": "dos",
+    "layers": [
+      "signature",
+      "supervised",
+      "anomaly"
+    ],
+    "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+    "identity": {
+      "protocol_type": "tcp",
+      "service": "private",
+      "flag": "S0",
+      "duration": 0.0,
+      "src_bytes": 0.0,
+      "dst_bytes": 0.0,
+      "count": 383.0,
+      "srv_count": 240.0
+    },
+    "rules": [
+      {
+        "rule_id": "R01",
+        "rule": "TCP SYN flood",
+        "category": "dos",
+        "severity": "critical",
+        "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+        "targets": "neptune, processtable",
+        "observed": {
+          "flag": "S0",
+          "serror_rate": "0.998",
+          "srv_serror_rate": "0.998",
+          "count": "383",
+          "dst_host_serror_rate": "0.906"
+        }
+      },
+      {
+        "rule_id": "R06",
+        "rule": "Vertical port scan",
+        "category": "probe",
+        "severity": "high",
+        "why": "One host touched across many different services (diff_srv_rate >= 0.55) with a long connection history but few repeats of any single service is port enumeration, not normal client behaviour.",
+        "targets": "portsweep, satan, mscan",
+        "observed": {
+          "diff_srv_rate": "0.708",
+          "dst_host_count": "235",
+          "dst_host_diff_srv_rate": "0",
+          "dst_host_same_srv_rate": "0.086",
+          "dst_host_srv_count": "6"
+        }
+      }
+    ],
+    "supervised": {
+      "predicted": "dos",
+      "probability": 0.9997,
+      "attack_probability": 1.0,
+      "class_probabilities": {
+        "dos": 0.9997,
+        "normal": 0.0,
+        "probe": 0.0003,
+        "r2l": 0.0,
+        "u2r": 0.0
+      },
+      "features": [
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "contribution": 0.14105113452641646,
+          "observed": 383.0,
+          "direction": "raises",
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "contribution": 0.13405806831098602,
+          "observed": 383.0,
+          "direction": "raises",
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "dst_host_srv_serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.09782984222724254,
+          "observed": 0.9570448251070749,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.08074086196162562,
+          "observed": 0.9980434219670758,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "srv_serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.07007715838767588,
+          "observed": 0.998136586027609,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        }
+      ]
+    },
+    "anomaly": {
+      "score": 0.6327,
+      "threshold": 0.5923,
+      "more_unusual_than": 0.999,
+      "alerted": true,
+      "features": [
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "weight": 0.0805428718711968,
+          "observed": 383.0,
+          "benign_mean": 19.89849108367627,
+          "benign_sd": 49.61929726240521,
+          "z": 7.31774791158586,
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "error_pressure",
+          "group": "error_behaviour",
+          "weight": 0.07416772256606236,
+          "observed": 0.998136586027609,
+          "benign_mean": 0.06595614078569668,
+          "benign_sd": 0.1822634584248065,
+          "z": 5.114467009998535,
+          "meaning": "max(serror_rate, srv_serror_rate) + max(rerror_rate, srv_rerror_rate), in [0, 2]. One number for 'connections here are failing', which is what both scanning and SYN flooding produce."
+        },
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "weight": 0.07052016714261895,
+          "observed": 383.0,
+          "benign_mean": 12.739264380607418,
+          "benign_sd": 36.293866374546404,
+          "z": 10.201744057752514,
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "dst_host_same_srv_rate",
+          "group": "service_spread",
+          "weight": 0.05997173349908852,
+          "observed": 0.08622336364088314,
+          "benign_mean": 0.7975341578808474,
+          "benign_sd": 0.2048017172029511,
+          "z": -3.4731681157491514,
+          "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+        },
+        {
+          "feature": "srv_count",
+          "group": "connection_rate",
+          "weight": 0.05906473361799754,
+          "observed": 240.0,
+          "benign_mean": 21.107494700087294,
+          "benign_sd": 50.59477724367866,
+          "z": 4.3263853943988115,
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        }
+      ]
+    },
+    "ground_truth": {
+      "label": "neptune",
+      "category": "dos",
+      "is_attack": "1"
+    },
+    "narrative": "(private, state S0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=S0, serror_rate=0.998, srv_serror_rate=0.998, count=383, dst_host_serror_rate=0.906. A further 1 rule(s) also matched. The supervised model assigns 100.0% to 'dos'. Largest contributions: conn_per_second=383 (raises dos by 0.141); count=383 (raises dos by 0.134); dst_host_srv_serror_rate=0.957 (raises dos by 0.098). The anomaly layer scores this more unusual than 99.9% of benign training traffic. Most isolating features: count=383 (+7.3 SD from the benign mean); error_pressure=0.998 (+5.1 SD from the benign mean); conn_per_second=383 (+10.2 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+  },
+  {
+    "row": 6154,
+    "severity": "critical",
+    "confidence": 0.9977,
+    "category": "dos",
+    "layers": [
+      "signature",
+      "supervised",
+      "anomaly"
+    ],
+    "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+    "identity": {
+      "protocol_type": "tcp",
+      "service": "private",
+      "flag": "S0",
+      "duration": 0.0,
+      "src_bytes": 0.0,
+      "dst_bytes": 0.0,
+      "count": 319.0,
+      "srv_count": 380.0
+    },
+    "rules": [
+      {
+        "rule_id": "R01",
+        "rule": "TCP SYN flood",
+        "category": "dos",
+        "severity": "critical",
+        "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+        "targets": "neptune, processtable",
+        "observed": {
+          "flag": "S0",
+          "serror_rate": "0.981",
+          "srv_serror_rate": "0.988",
+          "count": "319",
+          "dst_host_serror_rate": "0.983"
+        }
+      }
+    ],
+    "supervised": {
+      "predicted": "dos",
+      "probability": 0.9997,
+      "attack_probability": 1.0,
+      "class_probabilities": {
+        "dos": 0.9997,
+        "normal": 0.0,
+        "probe": 0.0003,
+        "r2l": 0.0,
+        "u2r": 0.0
+      },
+      "features": [
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "contribution": 0.1370940988866841,
+          "observed": 319.0,
+          "direction": "raises",
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "contribution": 0.1304999401422298,
+          "observed": 319.0,
+          "direction": "raises",
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "dst_host_srv_serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.08256488031681407,
+          "observed": 0.9992160295806803,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.08074086196162562,
+          "observed": 0.9813117619415151,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "srv_serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.07007715838767588,
+          "observed": 0.9877909755058966,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        }
+      ]
+    },
+    "anomaly": {
+      "score": 0.6327,
+      "threshold": 0.5923,
+      "more_unusual_than": 0.999,
+      "alerted": true,
+      "features": [
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "weight": 0.08934524782086438,
+          "observed": 319.0,
+          "benign_mean": 19.89849108367627,
+          "benign_sd": 49.61929726240521,
+          "z": 6.027927145653922,
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "error_pressure",
+          "group": "error_behaviour",
+          "weight": 0.07605364001534685,
+          "observed": 0.9877909755058966,
+          "benign_mean": 0.06595614078569668,
+          "benign_sd": 0.1822634584248065,
+          "z": 5.057705163103258,
+          "meaning": "max(serror_rate, srv_serror_rate) + max(rerror_rate, srv_rerror_rate), in [0, 2]. One number for 'connections here are failing', which is what both scanning and SYN flooding produce."
+        },
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "weight": 0.07242272552400054,
+          "observed": 319.0,
+          "benign_mean": 12.739264380607418,
+          "benign_sd": 36.293866374546404,
+          "z": 8.438360698715174,
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "srv_count",
+          "group": "connection_rate",
+          "weight": 0.06696054905874697,
+          "observed": 380.0,
+          "benign_mean": 21.107494700087294,
+          "benign_sd": 50.59477724367866,
+          "z": 7.093469422177424,
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "dst_host_same_src_port_rate",
+          "group": "service_spread",
+          "weight": 0.06242172690000162,
+          "observed": 0.9880373985101959,
+          "benign_mean": 0.40727661720075936,
+          "benign_sd": 0.22632816589300409,
+          "z": 2.5660119632833913,
+          "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+        }
+      ]
+    },
+    "ground_truth": {
+      "label": "neptune",
+      "category": "dos",
+      "is_attack": "1"
+    },
+    "narrative": "(private, state S0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=S0, serror_rate=0.981, srv_serror_rate=0.988, count=319, dst_host_serror_rate=0.983. The supervised model assigns 100.0% to 'dos'. Largest contributions: conn_per_second=319 (raises dos by 0.137); count=319 (raises dos by 0.130); dst_host_srv_serror_rate=0.999 (raises dos by 0.083). The anomaly layer scores this more unusual than 99.9% of benign training traffic. Most isolating features: count=319 (+6.0 SD from the benign mean); error_pressure=0.988 (+5.1 SD from the benign mean); conn_per_second=319 (+8.4 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+  },
+  {
+    "row": 7658,
+    "severity": "critical",
+    "confidence": 0.9977,
+    "category": "dos",
+    "layers": [
+      "signature",
+      "supervised",
+      "anomaly"
+    ],
+    "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+    "identity": {
+      "protocol_type": "tcp",
+      "service": "private",
+      "flag": "S0",
+      "duration": 0.0,
+      "src_bytes": 0.0,
+      "dst_bytes": 0.0,
+      "count": 400.0,
+      "srv_count": 493.0
+    },
+    "rules": [
+      {
+        "rule_id": "R01",
+        "rule": "TCP SYN flood",
+        "category": "dos",
+        "severity": "critical",
+        "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+        "targets": "neptune, processtable",
+        "observed": {
+          "flag": "S0",
+          "serror_rate": "1.000",
+          "srv_serror_rate": "0.947",
+          "count": "400",
+          "dst_host_serror_rate": "0.984"
+        }
+      }
+    ],
+    "supervised": {
+      "predicted": "dos",
+      "probability": 0.9997,
+      "attack_probability": 1.0,
+      "class_probabilities": {
+        "dos": 0.9997,
+        "normal": 0.0,
+        "probe": 0.0003,
+        "r2l": 0.0,
+        "u2r": 0.0
+      },
+      "features": [
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "contribution": 0.1516120900361307,
+          "observed": 400.0,
+          "direction": "raises",
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "contribution": 0.14571493154116155,
+          "observed": 400.0,
+          "direction": "raises",
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "dst_host_srv_serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.09720265731461979,
+          "observed": 0.9891859994249482,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.08074086196162562,
+          "observed": 0.9999304855176905,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "srv_count",
+          "group": "connection_rate",
+          "contribution": 0.060481751033810184,
+          "observed": 493.0,
+          "direction": "raises",
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        }
+      ]
+    },
+    "anomaly": {
+      "score": 0.6337,
+      "threshold": 0.5923,
+      "more_unusual_than": 0.999,
+      "alerted": true,
+      "features": [
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "weight": 0.0875469587618982,
+          "observed": 400.0,
+          "benign_mean": 19.89849108367627,
+          "benign_sd": 49.61929726240521,
+          "z": 7.660356552536531,
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "error_pressure",
+          "group": "error_behaviour",
+          "weight": 0.07708421985902587,
+          "observed": 0.9999304855176905,
+          "benign_mean": 0.06595614078569668,
+          "benign_sd": 0.1822634584248065,
+          "z": 5.124309353085762,
+          "meaning": "max(serror_rate, srv_serror_rate) + max(rerror_rate, srv_rerror_rate), in [0, 2]. One number for 'connections here are failing', which is what both scanning and SYN flooding produce."
+        },
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "weight": 0.07450430736769705,
+          "observed": 400.0,
+          "benign_mean": 12.739264380607418,
+          "benign_sd": 36.293866374546404,
+          "z": 10.670142762496807,
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "srv_count",
+          "group": "connection_rate",
+          "weight": 0.06693782943708225,
+          "observed": 493.0,
+          "benign_mean": 21.107494700087294,
+          "benign_sd": 50.59477724367866,
+          "z": 9.326901530313018,
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "dst_host_same_src_port_rate",
+          "group": "service_spread",
+          "weight": 0.06358802374457079,
+          "observed": 0.9899560783032013,
+          "benign_mean": 0.40727661720075936,
+          "benign_sd": 0.22632816589300409,
+          "z": 2.5744893871401837,
+          "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+        }
+      ]
+    },
+    "ground_truth": {
+      "label": "neptune",
+      "category": "dos",
+      "is_attack": "1"
+    },
+    "narrative": "(private, state S0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=S0, serror_rate=1.000, srv_serror_rate=0.947, count=400, dst_host_serror_rate=0.984. The supervised model assigns 100.0% to 'dos'. Largest contributions: conn_per_second=400 (raises dos by 0.152); count=400 (raises dos by 0.146); dst_host_srv_serror_rate=0.989 (raises dos by 0.097). The anomaly layer scores this more unusual than 99.9% of benign training traffic. Most isolating features: count=400 (+7.7 SD from the benign mean); error_pressure=1 (+5.1 SD from the benign mean); conn_per_second=400 (+10.7 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+  },
+  {
+    "row": 1140,
+    "severity": "critical",
+    "confidence": 0.9977,
+    "category": "dos",
+    "layers": [
+      "signature",
+      "supervised",
+      "anomaly"
+    ],
+    "corroboration": "3 of 3 layers agree (signature, supervised, anomaly)",
+    "identity": {
+      "protocol_type": "tcp",
+      "service": "private",
+      "flag": "S0",
+      "duration": 0.0,
+      "src_bytes": 0.0,
+      "dst_bytes": 0.0,
+      "count": 349.0,
+      "srv_count": 328.0
+    },
+    "rules": [
+      {
+        "rule_id": "R01",
+        "rule": "TCP SYN flood",
+        "category": "dos",
+        "severity": "critical",
+        "why": "A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100.",
+        "targets": "neptune, processtable",
+        "observed": {
+          "flag": "S0",
+          "serror_rate": "0.960",
+          "srv_serror_rate": "0.974",
+          "count": "349",
+          "dst_host_serror_rate": "0.987"
+        }
+      }
+    ],
+    "supervised": {
+      "predicted": "dos",
+      "probability": 0.9997,
+      "attack_probability": 1.0,
+      "class_probabilities": {
+        "dos": 0.9997,
+        "normal": 0.0,
+        "probe": 0.0003,
+        "r2l": 0.0,
+        "u2r": 0.0
+      },
+      "features": [
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "contribution": 0.1370940988866841,
+          "observed": 349.0,
+          "direction": "raises",
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "contribution": 0.13108084616368265,
+          "observed": 349.0,
+          "direction": "raises",
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "dst_host_srv_serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.08256488031681407,
+          "observed": 0.9839552931364338,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.08074086196162562,
+          "observed": 0.9602065726722904,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        },
+        {
+          "feature": "srv_serror_rate",
+          "group": "error_behaviour",
+          "contribution": 0.07007715838767588,
+          "observed": 0.9742473992664686,
+          "direction": "raises",
+          "meaning": "SYN-error and rejection rates spike when a scanner touches closed ports or a SYN flood exhausts the backlog."
+        }
+      ]
+    },
+    "anomaly": {
+      "score": 0.6322,
+      "threshold": 0.5923,
+      "more_unusual_than": 0.9989,
+      "alerted": true,
+      "features": [
+        {
+          "feature": "count",
+          "group": "connection_rate",
+          "weight": 0.09022705512649906,
+          "observed": 349.0,
+          "benign_mean": 19.89849108367627,
+          "benign_sd": 49.61929726240521,
+          "z": 6.632530629684518,
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "error_pressure",
+          "group": "error_behaviour",
+          "weight": 0.08215480027159697,
+          "observed": 0.9742473992664686,
+          "benign_mean": 0.06595614078569668,
+          "benign_sd": 0.1822634584248065,
+          "z": 4.983397474900275,
+          "meaning": "max(serror_rate, srv_serror_rate) + max(rerror_rate, srv_rerror_rate), in [0, 2]. One number for 'connections here are failing', which is what both scanning and SYN flooding produce."
+        },
+        {
+          "feature": "conn_per_second",
+          "group": "connection_rate",
+          "weight": 0.07636795486233366,
+          "observed": 349.0,
+          "benign_mean": 12.739264380607418,
+          "benign_sd": 36.293866374546404,
+          "z": 9.264946648263928,
+          "meaning": "count / (duration + 1). Connection attempt rate to the same host, the primary flood signal."
+        },
+        {
+          "feature": "srv_count",
+          "group": "connection_rate",
+          "weight": 0.06874847790450443,
+          "observed": 328.0,
+          "benign_mean": 21.107494700087294,
+          "benign_sd": 50.59477724367866,
+          "z": 6.065695354716797,
+          "meaning": "Counts of connections to the same host/service in the trailing 2-second window are the primary signal for scanning and flooding."
+        },
+        {
+          "feature": "dst_host_same_src_port_rate",
+          "group": "service_spread",
+          "weight": 0.0640884636232712,
+          "observed": 0.9670835597258136,
+          "benign_mean": 0.40727661720075936,
+          "benign_sd": 0.22632816589300409,
+          "z": 2.47343029673868,
+          "meaning": "A host contacted across many different services with little repeat is horizontal scanning; a single service repeated is a flood."
+        }
+      ]
+    },
+    "ground_truth": {
+      "label": "neptune",
+      "category": "dos",
+      "is_attack": "1"
+    },
+    "narrative": "(private, state S0) flagged CRITICAL as dos with confidence 1.00. Rule R01 (TCP SYN flood) matched: A backlog-exhaustion flood leaves connections half-open: the TCP state stays SYN-received, so serror_rate approaches 1 while the connection count to one host exceeds 100. Observed: flag=S0, serror_rate=0.960, srv_serror_rate=0.974, count=349, dst_host_serror_rate=0.987. The supervised model assigns 100.0% to 'dos'. Largest contributions: conn_per_second=349 (raises dos by 0.137); count=349 (raises dos by 0.131); dst_host_srv_serror_rate=0.984 (raises dos by 0.083). The anomaly layer scores this more unusual than 99.9% of benign training traffic. Most isolating features: count=349 (+6.6 SD from the benign mean); error_pressure=0.974 (+5.0 SD from the benign mean); conn_per_second=349 (+9.3 SD from the benign mean). Corroboration: 3 of 3 layers agree (signature, supervised, anomaly)."
+  }
+]
